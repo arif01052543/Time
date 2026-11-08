@@ -13,30 +13,70 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
     setLoading(true);
     setErrorMsg('');
 
-    // ค้นหาผู้ใช้ด้วย name และ pin_code รองรับทั้ง role 'admin' และ 'owner'
-    const { data, error } = await supabase
-      .from('users')
-      .select('*, shops(*)')
-      .eq('name', username.trim())
-      .eq('pin_code', password.trim())
-      .in('role', ['admin', 'owner'])
-      .single();
+    try {
+      const cleanUsername = username.trim();
+      const cleanPassword = password.trim();
 
-    if (error || !data) {
-      setErrorMsg('ชื่อผู้ใช้งาน หรือ รหัสผ่าน ไม่ถูกต้อง');
-    } else {
-      onLoginSuccess(data);
+      // 1. ค้นหาผู้ใช้จากตาราง users (ใช้ ilike เพื่อไม่สนตัวพิมพ์เล็ก-ใหญ่)
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .ilike('name', cleanUsername)
+        .eq('pin_code', cleanPassword)
+        .in('role', ['admin', 'owner'])
+        .maybeSingle();
+
+      console.log('User query result:', { userData, userError });
+
+      if (userError) {
+        throw new Error(`[Database Error] ${userError.message}`);
+      }
+
+      if (!userData) {
+        setErrorMsg('ไม่พบบัญชีผู้ใช้ หรือ PIN ไม่ถูกต้อง');
+        setLoading(false);
+        return;
+      }
+
+      // 2. ดึงข้อมูลร้านค้าเพิ่มเติม (ถ้ามี shop_id)
+      let shopData = null;
+      if (userData.shop_id) {
+        const { data: sData, error: sError } = await supabase
+          .from('shops')
+          .select('*')
+          .eq('id', userData.shop_id)
+          .maybeSingle();
+        
+        if (sError) {
+          console.warn('Shop query error:', sError.message);
+        } else {
+          shopData = sData;
+        }
+      }
+
+      // ผูกข้อมูลร้านค้ากลับเข้าไปใน Object
+      const fullUserData = {
+        ...userData,
+        shops: shopData
+      };
+
+      console.log('Login Successful:', fullUserData);
+      onLoginSuccess(fullUserData);
+
+    } catch (err) {
+      console.error('Login Process Exception:', err);
+      setErrorMsg(err.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อระบบ');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-start sm:items-center p-0 sm:p-4">
       <div className="w-full max-w-sm bg-white h-screen sm:h-auto sm:min-h-[620px] sm:rounded-[36px] shadow-2xl overflow-y-auto border-0 sm:border border-gray-100 flex flex-col justify-between">
         
-        {/* Header สีเขียวทรงโค้ง */}
+        {/* Header */}
         <div className="bg-[#15803d] pt-8 pb-10 px-6 text-center text-white relative rounded-b-[40px] shadow-md shrink-0">
-          {/* ปุ่มพนักงาน มุมขวาบน */}
           <button
             type="button"
             onClick={onSwitchToEmployee}
@@ -46,7 +86,6 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
             <span>พนักงาน</span>
           </button>
 
-          {/* โลโก้วงกลม */}
           <div className="w-20 h-20 bg-white text-[#15803d] rounded-full flex items-center justify-center mx-auto mb-3 shadow-md mt-2">
             <Clock size={44} strokeWidth={2.5} />
           </div>
@@ -60,12 +99,12 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
           </div>
         </div>
 
-        {/* ฟอร์มเข้าสู่ระบบ */}
+        {/* Form */}
         <div className="px-6 py-6 flex-1 flex flex-col justify-center">
           <h2 className="text-center font-bold text-gray-800 text-xl mb-5">เข้าสู่ระบบ</h2>
 
           {errorMsg && (
-            <div className="mb-4 p-3 bg-red-50 text-red-600 text-xs rounded-2xl text-center font-medium border border-red-100">
+            <div className="mb-4 p-3 bg-red-50 text-red-600 text-xs rounded-2xl text-center font-medium border border-red-100 break-words">
               {errorMsg}
             </div>
           )}
@@ -79,7 +118,7 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="กรอกชื่อผู้ใช้งาน"
+                  placeholder="กรอกชื่อผู้ใช้งาน (เช่น admin)"
                   className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-emerald-600 focus:bg-white transition text-gray-700"
                   required
                 />
