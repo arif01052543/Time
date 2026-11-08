@@ -13,13 +13,13 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
     setLoading(true);
     setErrorMsg('');
 
-    // ตรวจสอบข้อมูลเจ้าของร้านจากฐานข้อมูล (role = 'owner')
+    // ค้นหาผู้ใช้ด้วย name และ pin_code รองรับทั้ง role 'admin' และ 'owner'
     const { data, error } = await supabase
       .from('users')
       .select('*, shops(*)')
-      .eq('id_card_last4', username) // ใช้ id_card_last4 เป็น username หรือ PIN เป็น password
-      .eq('pin_code', password)
-      .eq('role', 'owner')
+      .eq('name', username.trim())
+      .eq('pin_code', password.trim())
+      .in('role', ['admin', 'owner'])
       .single();
 
     if (error || !data) {
@@ -87,7 +87,7 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1.5">รหัสผ่าน</label>
+              <label className="text-xs font-bold text-gray-700 block mb-1.5">รหัสผ่าน (PIN)</label>
               <div className="relative flex items-center">
                 <Lock size={18} className="absolute left-4 text-gray-400" />
                 <input
