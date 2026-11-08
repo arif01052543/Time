@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabaseClient';
 import { 
   ArrowLeft, UserPlus, Briefcase, Clock, 
-  Edit3, Trash2, X, Save, QrCode, CreditCard,
-  UserCheck, UserX, Check, AlertCircle,
+  Edit3, Trash2, X, Save, CreditCard,
+  UserCheck, UserX, Image,
   Home, Users, Calculator, Settings 
 } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
   const emptyForm = {
     name: '',
     pin_code: '',
-    position: '',
+    position: 'พนักงานเสิร์ฟ',
     employment_type: 'full_time',
     salary_rate: '',
     work_start: '16:00',
@@ -67,7 +67,7 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
     setFormData({
       name: emp.name || '',
       pin_code: emp.pin_code || '',
-      position: emp.position || '',
+      position: emp.position || 'พนักงานเสิร์ฟ',
       employment_type: emp.employment_type === 'part_time' ? 'part_time' : 'full_time',
       salary_rate: emp.salary_rate || '',
       work_start: emp.work_start || '16:00',
@@ -79,7 +79,7 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
       bank_account_name: emp.bank_account_name || '',
       qr_code_url: emp.qr_code_url || '',
       avatar_url: emp.avatar_url || '',
-      status: 'approved' // เมื่อแอดมินแก้ไข/อนุมัติ จะปรับเป็น approved
+      status: 'approved'
     });
     setShowModal(true);
   };
@@ -102,10 +102,10 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
         ...formData,
         salary_rate: parseFloat(formData.salary_rate) || 0,
         late_penalty_rate: parseFloat(formData.late_penalty_rate) || 0,
-        id_card_last4: formData.pin_code,
-        shop_id: selectedBranch?.id,
+        id_card_last4: formData.pin_code || '0000',
+        shop_id: selectedBranch?.id || null,
         role: 'employee',
-        status: 'approved' // อนุมัติให้อนุมัติเข้าใช้งานได้
+        status: 'approved'
       };
 
       if (editingEmp) {
@@ -124,11 +124,10 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
       setShowModal(false);
       fetchEmployees();
     } catch (err) {
-      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      alert(`เกิดข้อผิดพลาดในการบันทึกข้อมูล: ${err.message}`);
     }
   };
 
-  // ปฏิเสธคำขอลงทะเบียน
   const handleReject = async (id, name) => {
     if (!confirm(`คุณต้องการปฏิเสธคำขอลงทะเบียนของ "${name}" ใช่หรือไม่?`)) return;
     try {
@@ -140,7 +139,7 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
       if (error) throw error;
       fetchEmployees();
     } catch (err) {
-      alert('เกิดข้อผิดพลาดในการปฏิเสธคำขอ');
+      alert(`เกิดข้อผิดพลาดในการปฏิเสธคำขอ: ${err.message}`);
     }
   };
 
@@ -151,7 +150,7 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
       if (error) throw error;
       fetchEmployees();
     } catch (err) {
-      alert('เกิดข้อผิดพลาดในการลบข้อมูล');
+      alert(`เกิดข้อผิดพลาดในการลบข้อมูล: ${err.message}`);
     }
   };
 
@@ -201,7 +200,7 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
           {/* รายชื่อพนักงาน */}
           <div className="p-4 space-y-3">
             
-            {/* Filter Tabs 3 หมวด (รออนุมัติ / ประจำ / พาร์ทไทม์) */}
+            {/* Filter Tabs 3 หมวด */}
             <div className="grid grid-cols-3 gap-1 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm text-center">
               <button
                 onClick={() => setFilterType('pending')}
@@ -283,7 +282,7 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
                               </span>
 
                               <span className="text-[10px] font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-lg">
-                                กะ {emp.work_start || '16:00'} - {emp.work_end || '00:00'}
+                                กะ {emp.work_start || '16:00'} - {emp.work_end || '00:00'} น.
                               </span>
                             </div>
                           )}
@@ -344,7 +343,7 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
           </div>
         </div>
 
-        {/* ==================== POPUP MODAL (อนุมัติ / แก้ไข) ==================== */}
+        {/* POPUP MODAL (อนุมัติ / แก้ไข) */}
         {showModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center p-0 sm:p-4 z-50 animate-in fade-in duration-200">
             <div className="bg-white w-full max-w-sm rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden">
@@ -362,6 +361,27 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
               </div>
 
               <form id="emp-form" onSubmit={handleSave} className="p-5 overflow-y-auto space-y-4 text-xs flex-1">
+                
+                {/* รูปโปรไฟล์ */}
+                <div>
+                  <label className="font-bold text-gray-700 block mb-1">รูปโปรไฟล์</label>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full border flex items-center justify-center overflow-hidden shrink-0">
+                      {formData.avatar_url ? (
+                        <img src={formData.avatar_url} alt="Avatar Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <Image size={20} className="text-gray-400" />
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, 'avatar_url')}
+                      className="text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="font-bold text-gray-700 block mb-1">ชื่อ - นามสกุล</label>
                   <input
@@ -377,11 +397,12 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
                   <div>
                     <label className="font-bold text-gray-700 block mb-1">รหัส PIN (4 หลัก)</label>
                     <input
-                      type="password"
+                      type="text"
                       maxLength={4}
                       value={formData.pin_code}
                       onChange={(e) => setFormData({ ...formData, pin_code: e.target.value })}
-                      className="w-full p-3 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 text-xs"
+                      placeholder="1234"
+                      className="w-full p-3 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-bold"
                       required
                     />
                   </div>
@@ -480,7 +501,7 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
                 <div className="border-t pt-3 space-y-3">
                   <div className="flex items-center space-x-1.5 text-gray-800 font-bold text-xs">
                     <CreditCard size={15} className="text-emerald-600" />
-                    <span>ข้อมูลบัญชีรับเงิน & QR Code</span>
+                    <span>ข้อมูลบัญชีรับเงิน</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2.5">

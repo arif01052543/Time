@@ -5,7 +5,7 @@ import EmployeeProfile from './EmployeeProfile';
 import { 
   Clock, LogOut, MapPin, FileText, Banknote, 
   Home, Wallet, User, CheckCircle2, ArrowRight, ArrowLeft,
-  Store, XCircle, AlertCircle
+  Store, XCircle, AlertCircle, Coffee
 } from 'lucide-react';
 
 export default function EmployeeDashboard({ currentUser, onLogout }) {
@@ -42,6 +42,19 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
     amount: '',
     reason: ''
   });
+
+  // ตรวจสอบวันหยุดประจำสัปดาห์
+  const checkIsOffDay = () => {
+    const userOffDay = currentUser?.off_day || currentUser?.shops?.default_off_day || 'ไม่มีวันหยุด';
+    if (!userOffDay || userOffDay === 'ไม่มีวันหยุด' || userOffDay === 'ไม่มี') return false;
+
+    const thaiDays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+    const todayThai = thaiDays[currentTime.getDay()];
+
+    return userOffDay.includes(todayThai);
+  };
+
+  const isOffDay = checkIsOffDay();
 
   const showAlert = (title, message, type = 'success') => {
     setAlertModal({
@@ -150,6 +163,11 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
 
   // ลงเวลาเข้า / ออก งาน
   const handleClockAction = async () => {
+    if (isOffDay) {
+      showAlert('วันนี้เป็นวันหยุด', 'วันนี้เป็นวันหยุดประจำสัปดาห์ของคุณ ไม่จำเป็นต้องลงเวลาเข้างานครับ', 'warning');
+      return;
+    }
+
     const allowedRadius = currentUser?.shops?.radius_meters || 100;
 
     if (distance === null) {
@@ -312,7 +330,7 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
           {activeTab === 'home' && (
             <div>
               
-              {/* TOP GREEN HEADER (กระชับความสูงลง) */}
+              {/* TOP GREEN HEADER */}
               <div className="bg-[#15803d] pt-4 pb-8 px-5 text-center text-white relative rounded-b-[36px] shadow-md">
                 <button
                   onClick={onLogout}
@@ -331,15 +349,27 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
 
                 <div className="inline-flex items-center space-x-1.5 px-3 py-0.5 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-medium">
                   <span className={`w-2 h-2 rounded-full ${
-                    isCheckedOut ? 'bg-red-400' : isCheckedIn ? 'bg-emerald-300 animate-pulse' : 'bg-amber-400 animate-pulse'
+                    isOffDay 
+                      ? 'bg-indigo-300 animate-pulse'
+                      : isCheckedOut 
+                      ? 'bg-red-400' 
+                      : isCheckedIn 
+                      ? 'bg-emerald-300 animate-pulse' 
+                      : 'bg-amber-400 animate-pulse'
                   }`}></span>
                   <span>
-                    {isCheckedOut ? 'ออกงานเรียบร้อยแล้ว' : isCheckedIn ? 'เข้างานแล้ว' : 'ยังไม่เข้างาน'}
+                    {isOffDay 
+                      ? 'วันนี้วันหยุดของคุณ' 
+                      : isCheckedOut 
+                      ? 'ออกงานเรียบร้อยแล้ว' 
+                      : isCheckedIn 
+                      ? 'เข้างานแล้ว' 
+                      : 'ยังไม่เข้างาน'}
                   </span>
                 </div>
               </div>
 
-              {/* PROFILE CARD OVERLAY (ปรับขนาดตัวอักษรและระยะเว้น) */}
+              {/* PROFILE CARD OVERLAY */}
               <div className="-mt-6 mx-3.5 relative z-10 bg-white rounded-2xl p-2.5 shadow-md border border-gray-100 flex items-center justify-between">
                 <div className="flex items-center space-x-2.5">
                   <div className="w-10 h-10 bg-gray-100 rounded-full border border-emerald-200 overflow-hidden shrink-0 flex items-center justify-center font-bold text-gray-400 text-sm">
@@ -373,7 +403,7 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
                 </div>
               </div>
 
-              {/* กล่องแสดงเวลาเข้างาน - ออกงาน (กระชับลง) */}
+              {/* กล่องแสดงเวลาเข้างาน - ออกงาน */}
               <div className="mx-3.5 mt-2.5 grid grid-cols-2 gap-2 text-xs">
                 <div className="bg-white p-2 rounded-xl border border-emerald-100 shadow-sm flex items-center space-x-2.5">
                   <div className="w-7 h-7 bg-emerald-100 text-[#15803d] rounded-lg flex items-center justify-center shrink-0">
@@ -400,33 +430,49 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
                 </div>
               </div>
 
-              {/* GPS BANNER (ทำเป็นแถบแนวนอนบางๆ กระชับพื้นที่) */}
+              {/* GPS BANNER */}
               <div className={`mx-3.5 mt-2 border rounded-2xl py-1.5 px-3 text-center transition-all ${
-                isInRange 
+                isOffDay
+                  ? 'bg-indigo-50/90 border-indigo-200'
+                  : isInRange 
                   ? 'bg-emerald-50/90 border-emerald-200' 
                   : 'bg-red-50/90 border-red-200'
               }`}>
                 <div className="flex items-center justify-center space-x-1.5 text-xs">
-                  <MapPin size={13} className={isInRange ? 'text-[#15803d]' : 'text-red-600'} />
+                  <MapPin size={13} className={isOffDay ? 'text-indigo-600' : isInRange ? 'text-[#15803d]' : 'text-red-600'} />
                   <h4 className="font-bold text-[10px] text-gray-800 truncate">
                     ร้าน: {currentUser?.shops?.shop_name || 'ร้านกาแฟ TT'}
                   </h4>
-                  <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full ${isInRange ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
-                    ไม่เกิน {currentUser?.shops?.radius_meters || 100} ม.
+                  <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full ${
+                    isOffDay
+                      ? 'bg-indigo-100 text-indigo-800'
+                      : isInRange 
+                      ? 'bg-emerald-100 text-emerald-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {isOffDay ? 'วันหยุดพักผ่อน' : `ไม่เกิน ${currentUser?.shops?.radius_meters || 100} ม.`}
                   </span>
                 </div>
-                <p className={`text-[9px] font-medium mt-0.5 ${isInRange ? 'text-emerald-600' : 'text-red-500 animate-pulse'}`}>
-                  {locationStatus}
+                <p className={`text-[9px] font-medium mt-0.5 ${
+                  isOffDay
+                    ? 'text-indigo-600 font-bold'
+                    : isInRange 
+                    ? 'text-emerald-600' 
+                    : 'text-red-500 animate-pulse'
+                }`}>
+                  {isOffDay ? 'วันนี้เป็นวันหยุดประจำสัปดาห์ ไม่ต้องลงเวลาเข้างาน' : locationStatus}
                 </p>
               </div>
 
-              {/* ปุ่มวงกลมกดลงเวลางาน (อยู่ตรงกลางเด่นชัด) */}
+              {/* ปุ่มวงกลมกดลงเวลางาน */}
               <div className="my-3 flex justify-center">
                 <button
                   onClick={handleClockAction}
-                  disabled={loading || isCheckedOut}
+                  disabled={loading || isCheckedOut || isOffDay}
                   className={`w-36 h-36 rounded-full shadow-2xl flex flex-col items-center justify-center text-white transition-all transform active:scale-95 border-4 border-white ${
-                    isCheckedOut
+                    isOffDay
+                      ? 'bg-indigo-600 shadow-indigo-600/30 cursor-not-allowed'
+                      : isCheckedOut
                       ? 'bg-gray-400 cursor-not-allowed'
                       : !isInRange
                       ? 'bg-red-500 hover:bg-red-600 shadow-red-500/30'
@@ -435,10 +481,16 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
                       : 'bg-[#15803d] hover:bg-emerald-800 shadow-emerald-700/40'
                   }`}
                 >
-                  <Clock size={36} strokeWidth={2.2} className="mb-0.5" />
+                  {isOffDay ? (
+                    <Coffee size={36} strokeWidth={2.2} className="mb-0.5" />
+                  ) : (
+                    <Clock size={36} strokeWidth={2.2} className="mb-0.5" />
+                  )}
                   <span className="text-sm font-black tracking-wide text-center px-2">
                     {loading 
                       ? 'กำลังบันทึก...' 
+                      : isOffDay
+                      ? 'วันนี้วันหยุด'
                       : isCheckedOut 
                       ? 'ออกงานแล้ว' 
                       : !isInRange 
@@ -448,7 +500,11 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
                       : 'กดลงเวลางาน'}
                   </span>
                   <span className="text-[9px] text-emerald-100 font-light mt-0.5">
-                    {isInRange ? 'สแกนพิกัด GPS สำเร็จ' : 'ระยะทางเกินกำหนด'}
+                    {isOffDay
+                      ? 'พักผ่อนให้เต็มที่ครับ'
+                      : isInRange 
+                      ? 'สแกนพิกัด GPS สำเร็จ' 
+                      : 'ระยะทางเกินกำหนด'}
                   </span>
                 </button>
               </div>

@@ -150,60 +150,59 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
   };
 
   // 5. บันทึกเปลี่ยนชื่อผู้ใช้งานและรหัสผ่านแอดมิน
-const handleSaveAccountCredentials = async (e) => {
-  e.preventDefault();
-  setAccountError('');
-  setAccountSuccess('');
+  const handleSaveAccountCredentials = async (e) => {
+    e.preventDefault();
+    setAccountError('');
+    setAccountSuccess('');
 
-  // ดึง userId และดักจับกรณีไม่มีค่า id
-  const userId = currentUser?.id || currentUser?.user_id || selectedBranch?.owner_id;
-  if (!userId) {
-    setAccountError('ไม่พบ ID ผู้ใช้งาน ไม่สามารถอัปเดตบัญชีได้');
-    return;
-  }
-
-  if (!adminUsername.trim()) {
-    setAccountError('กรุณากรอกชื่อผู้ใช้งาน');
-    return;
-  }
-
-  if (newPin && newPin.length < 4) {
-    setAccountError('รหัสผ่านใหม่ต้องมีอย่างน้อย 4 ตัวอักษร/ตัวเลข');
-    return;
-  }
-
-  if (newPin && newPin !== confirmPin) {
-    setAccountError('รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน');
-    return;
-  }
-
-  setSavingAccount(true);
-  try {
-    const updatePayload = {
-      id_card_last4: adminUsername,
-    };
-
-    if (newPin) {
-      updatePayload.pin_code = newPin;
+    const userId = currentUser?.id || currentUser?.user_id || selectedBranch?.owner_id;
+    if (!userId) {
+      setAccountError('ไม่พบ ID ผู้ใช้งาน ไม่สามารถอัปเดตบัญชีได้');
+      return;
     }
 
-    const { error } = await supabase
-      .from('users')
-      .update(updatePayload)
-      .eq('id', userId);
+    if (!adminUsername.trim()) {
+      setAccountError('กรุณากรอกชื่อผู้ใช้งาน');
+      return;
+    }
 
-    if (error) throw error;
+    if (newPin && newPin.length < 4) {
+      setAccountError('รหัสผ่านใหม่ต้องมีอย่างน้อย 4 ตัวอักษร/ตัวเลข');
+      return;
+    }
 
-    setAccountSuccess('อัปเดตชื่อผู้ใช้งานและรหัสผ่านเรียบร้อยแล้ว');
-    setNewPin('');
-    setConfirmPin('');
-    setTimeout(() => setAccountSuccess(''), 3500);
-  } catch (err) {
-    setAccountError('เกิดข้อผิดพลาดในการอัปเดตบัญชี: ' + err.message);
-  } finally {
-    setSavingAccount(false);
-  }
-};
+    if (newPin && newPin !== confirmPin) {
+      setAccountError('รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน');
+      return;
+    }
+
+    setSavingAccount(true);
+    try {
+      const updatePayload = {
+        id_card_last4: adminUsername,
+      };
+
+      if (newPin) {
+        updatePayload.pin_code = newPin;
+      }
+
+      const { error } = await supabase
+        .from('users')
+        .update(updatePayload)
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      setAccountSuccess('อัปเดตชื่อผู้ใช้งานและรหัสผ่านเรียบร้อยแล้ว');
+      setNewPin('');
+      setConfirmPin('');
+      setTimeout(() => setAccountSuccess(''), 3500);
+    } catch (err) {
+      setAccountError('เกิดข้อผิดพลาดในการอัปเดตบัญชี: ' + err.message);
+    } finally {
+      setSavingAccount(false);
+    }
+  };
 
   // URL แผนที่แสดงพิกัด
   const mapEmbedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${Number(longitude) - 0.003}%2C${Number(latitude) - 0.003}%2C${Number(longitude) + 0.003}%2C${Number(latitude) + 0.003}&layer=mapnik&marker=${latitude}%2C${longitude}`;
@@ -260,13 +259,13 @@ const handleSaveAccountCredentials = async (e) => {
                   value={shopName}
                   onChange={(e) => setShopName(e.target.value)}
                   placeholder="เช่น ร้านตัวอย่าง สาขา1"
-                  className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-medium"
+                  className="w-full min-w-0 p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-medium"
                 />
               </div>
             </div>
 
-            {/* CARD 2: เวลาทำงานและวันหยุดตั้งต้นของร้าน */}
-            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3">
+            {/* CARD 2: เวลาทำงานและวันหยุดตั้งต้นของร้าน (ปรับแก้เรื่องเวลาล้นกรอบ) */}
+            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3.5">
               <div className="flex items-center space-x-2.5 text-gray-800 font-extrabold text-sm border-b border-gray-50 pb-2.5">
                 <div className="w-8 h-8 bg-purple-100/70 text-purple-600 rounded-xl flex items-center justify-center">
                   <Clock size={18} />
@@ -274,32 +273,35 @@ const handleSaveAccountCredentials = async (e) => {
                 <span>เวลาทำงานและวันหยุดตั้งต้นของร้าน</span>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1.5">เวลาเข้างานมาตรฐาน</label>
-                <input
-                  type="time"
-                  value={workStart}
-                  onChange={(e) => setWorkStart(e.target.value)}
-                  className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-medium"
-                />
+              {/* ปรับ Input เวลาเป็น Grid 2 คอลัมน์ กระชับสวยงาม ไม่ทะลุกรอบมือถือ */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="min-w-0">
+                  <label className="text-[11px] font-bold text-gray-700 block mb-1">เวลาเข้างานมาตรฐาน</label>
+                  <input
+                    type="time"
+                    value={workStart}
+                    onChange={(e) => setWorkStart(e.target.value)}
+                    className="w-full min-w-0 px-2.5 py-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold text-gray-800 text-center"
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <label className="text-[11px] font-bold text-gray-700 block mb-1">เวลาออกงานมาตรฐาน</label>
+                  <input
+                    type="time"
+                    value={workEnd}
+                    onChange={(e) => setWorkEnd(e.target.value)}
+                    className="w-full min-w-0 px-2.5 py-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold text-gray-800 text-center"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1.5">เวลาออกงานมาตรฐาน</label>
-                <input
-                  type="time"
-                  value={workEnd}
-                  onChange={(e) => setWorkEnd(e.target.value)}
-                  className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1.5">วันหยุดประจำร้าน (ค่าตั้งต้น)</label>
+                <label className="text-[11px] font-bold text-gray-700 block mb-1">วันหยุดประจำร้าน (ค่าตั้งต้น)</label>
                 <select
                   value={offDay}
                   onChange={(e) => setOffDay(e.target.value)}
-                  className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-medium"
+                  className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-medium text-gray-800"
                 >
                   <option value="ไม่มีวันหยุด">ไม่มีวันหยุด</option>
                   <option value="วันจันทร์">วันจันทร์</option>
@@ -350,7 +352,7 @@ const handleSaveAccountCredentials = async (e) => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="พิมพ์ชื่อสถานที่, ถนน หรืออำเภอ..."
-                  className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs"
+                  className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs"
                 />
                 <button
                   type="submit"
@@ -376,7 +378,7 @@ const handleSaveAccountCredentials = async (e) => {
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
-                <div>
+                <div className="min-w-0">
                   <label className="text-[11px] font-bold text-gray-600 block mb-1">ละติจูด (Latitude)</label>
                   <input
                     type="number"
@@ -384,11 +386,11 @@ const handleSaveAccountCredentials = async (e) => {
                     value={latitude}
                     onChange={(e) => setLatitude(e.target.value)}
                     placeholder="6.8202259"
-                    className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-mono text-xs"
+                    className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-mono text-xs"
                   />
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <label className="text-[11px] font-bold text-gray-600 block mb-1">ลองจิจูด (Longitude)</label>
                   <input
                     type="number"
@@ -396,7 +398,7 @@ const handleSaveAccountCredentials = async (e) => {
                     value={longitude}
                     onChange={(e) => setLongitude(e.target.value)}
                     placeholder="101.2804537"
-                    className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-mono text-xs"
+                    className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-mono text-xs"
                   />
                 </div>
               </div>
@@ -411,7 +413,7 @@ const handleSaveAccountCredentials = async (e) => {
                   value={radiusMeters}
                   onChange={(e) => setRadiusMeters(e.target.value)}
                   placeholder="100"
-                  className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold"
+                  className="w-full min-w-0 p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold"
                 />
               </div>
 
@@ -426,7 +428,7 @@ const handleSaveAccountCredentials = async (e) => {
               </button>
             </div>
 
-            {/* CARD 4: เปลี่ยนชื่อผู้ใช้งาน & รหัสผ่านแอดมิน (เพิ่มใหม่) */}
+            {/* CARD 4: เปลี่ยนชื่อผู้ใช้งาน & รหัสผ่านแอดมิน */}
             <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3.5">
               <div className="flex items-center space-x-2.5 text-gray-800 font-extrabold text-sm border-b border-gray-50 pb-2.5">
                 <div className="w-8 h-8 bg-blue-100/80 text-blue-700 rounded-xl flex items-center justify-center">
@@ -462,7 +464,7 @@ const handleSaveAccountCredentials = async (e) => {
                       value={adminUsername}
                       onChange={(e) => setAdminUsername(e.target.value)}
                       placeholder="เช่น admin หรือ admin_shop1"
-                      className="w-full pl-10 pr-3 py-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-semibold text-gray-800"
+                      className="w-full min-w-0 pl-10 pr-3 py-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-semibold text-gray-800"
                       required
                     />
                   </div>
@@ -477,7 +479,7 @@ const handleSaveAccountCredentials = async (e) => {
                       value={newPin}
                       onChange={(e) => setNewPin(e.target.value)}
                       placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยนรหัสผ่าน"
-                      className="w-full pl-10 pr-3 py-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold"
+                      className="w-full min-w-0 pl-10 pr-3 py-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold"
                     />
                   </div>
                 </div>
@@ -492,7 +494,7 @@ const handleSaveAccountCredentials = async (e) => {
                         value={confirmPin}
                         onChange={(e) => setConfirmPin(e.target.value)}
                         placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง"
-                        className="w-full pl-10 pr-3 py-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold"
+                        className="w-full min-w-0 pl-10 pr-3 py-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold"
                         required
                       />
                     </div>

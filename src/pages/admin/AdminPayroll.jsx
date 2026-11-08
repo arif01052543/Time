@@ -4,12 +4,14 @@ import {
   ArrowLeft, Calendar, ChevronDown, CheckCircle2, 
   Banknote, X, Sliders, FileText, Check,
   CreditCard, Upload, Image as ImageIcon, Trash2,
-  Home, Users, Calculator, Settings 
+  Home, Users, Calculator, Settings, QrCode, Download,
+  TrendingUp, TrendingDown, Clock, UserCheck, AlertCircle
 } from 'lucide-react';
 
 export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
   const [employees, setEmployees] = useState([]);
-  const [filterType, setFilterType] = useState('full_time');
+  const [filterType, setFilterType] = useState('full_time'); // 'full_time' | 'part_time'
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState('all'); // 'all' | 'pending' | 'paid'
   const [loading, setLoading] = useState(true);
 
   const [selectedMonth, setSelectedMonth] = useState('พฤศจิกายน 2026');
@@ -191,7 +193,16 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
     }
   };
 
-  // บันทึกคำขอลง Database Supabase Realtime
+  const handleDownloadQR = (url, empName) => {
+    if (!url) return;
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `QR_Code_${empName || 'Payment'}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleConfirmPayment = async () => {
     if (!selectedEmp) return;
     setIsSaving(true);
@@ -245,11 +256,22 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
     }
   };
 
+  // การกรองข้อมูลพนักงาน (แยกประเภทพนักงาน และ แยกสถานะการโอนเงิน)
   const fullTimeEmps = employees.filter(
     (e) => !e.employment_type || e.employment_type === 'full_time' || e.employment_type === 'monthly' || e.employment_type === 'daily'
   );
   const partTimeEmps = employees.filter((e) => e.employment_type === 'part_time');
-  const displayedEmps = filterType === 'full_time' ? fullTimeEmps : partTimeEmps;
+  const currentTypeEmps = filterType === 'full_time' ? fullTimeEmps : partTimeEmps;
+
+  const pendingEmps = currentTypeEmps.filter((e) => !paidRecords[e.id]);
+  const paidEmps = currentTypeEmps.filter((e) => !!paidRecords[e.id]);
+
+  let displayedEmps = currentTypeEmps;
+  if (paymentStatusFilter === 'pending') {
+    displayedEmps = pendingEmps;
+  } else if (paymentStatusFilter === 'paid') {
+    displayedEmps = paidEmps;
+  }
 
   const totalCycleAmount = employees.reduce((sum, e) => {
     const paidInfo = paidRecords[e.id];
@@ -263,6 +285,17 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
     half1: 'งวดแรก (วันที่ 1 - 15)',
     half2: 'งวดหลัง (16 - สิ้นเดือน)',
   };
+
+  // คำนวณยอดเงินของ modal
+  const bonusVal = Number(adjustments.bonus || 0);
+  const deductionVal = Number(adjustments.deduction || 0);
+  const lateVal = Number(adjustments.latePenalty || 0);
+  const advanceVal = Number(adjustments.advanceDeduction || 0);
+  const grossVal = selectedEmp?.grossSalary || 0;
+
+  const totalIncome = grossVal + bonusVal;
+  const totalDeduction = lateVal + advanceVal + deductionVal;
+  const modalNetTotal = Math.max(0, totalIncome - totalDeduction);
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-start p-0 sm:p-4">
@@ -351,7 +384,8 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
             </div>
           </div>
 
-          <div className="px-4 py-2">
+          {/* 1. ตัวกรองประเภทพนักงาน */}
+          <div className="px-4 py-1.5">
             <div className="grid grid-cols-2 gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
               <button
                 onClick={() => setFilterType('full_time')}
@@ -376,11 +410,56 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
             </div>
           </div>
 
+          {/* 2. ตัวกรองแยกสถานะ "โอนจ่ายแล้ว" vs "ยังไม่ได้โอน" */}
+          <div className="px-4 pb-2">
+            <div className="flex bg-gray-200/60 p-1 rounded-2xl text-[11px] font-semibold space-x-1">
+              <button
+                onClick={() => setPaymentStatusFilter('all')}
+                className={`flex-1 py-1.5 rounded-xl transition ${
+                  paymentStatusFilter === 'all'
+                    ? 'bg-white text-gray-800 shadow-sm font-bold'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                ทั้งหมด ({currentTypeEmps.length})
+              </button>
+              <button
+                onClick={() => setPaymentStatusFilter('pending')}
+                className={`flex-1 py-1.5 rounded-xl transition flex items-center justify-center space-x-1 ${
+                  paymentStatusFilter === 'pending'
+                    ? 'bg-amber-500 text-white shadow-sm font-bold'
+                    : 'text-amber-700 hover:bg-amber-100/50'
+                }`}
+              >
+                <Clock size={12} />
+                <span>ยังไม่ได้โอน ({pendingEmps.length})</span>
+              </button>
+              <button
+                onClick={() => setPaymentStatusFilter('paid')}
+                className={`flex-1 py-1.5 rounded-xl transition flex items-center justify-center space-x-1 ${
+                  paymentStatusFilter === 'paid'
+                    ? 'bg-[#15803d] text-white shadow-sm font-bold'
+                    : 'text-emerald-700 hover:bg-emerald-100/50'
+                }`}
+              >
+                <CheckCircle2 size={12} />
+                <span>โอนแล้ว ({paidEmps.length})</span>
+              </button>
+            </div>
+          </div>
+
+          {/* รายการพนักงาน */}
           <div className="p-4 space-y-3 pt-1">
             {loading ? (
               <div className="text-center py-10 text-xs text-gray-400">กำลังคำนวณเงินเดือนจากฐานข้อมูล...</div>
             ) : displayedEmps.length === 0 ? (
-              <div className="text-center py-12 text-xs text-gray-400">ไม่พบรายชื่อพนักงานในหมวดนี้</div>
+              <div className="text-center py-12 text-xs text-gray-400">
+                {paymentStatusFilter === 'pending' 
+                  ? 'ไม่มีรายการที่รอโอนจ่าย' 
+                  : paymentStatusFilter === 'paid' 
+                  ? 'ยังไม่มีรายการที่โอนจ่ายแล้ว' 
+                  : 'ไม่พบรายชื่อพนักงานในหมวดนี้'}
+              </div>
             ) : (
               displayedEmps.map((emp) => {
                 const paidData = paidRecords[emp.id];
@@ -394,14 +473,19 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
                       isPaid ? 'border-emerald-500 ring-1 ring-emerald-500/30' : 'border-gray-100'
                     }`}
                   >
-                    {isPaid && (
+                    {isPaid ? (
                       <div className="absolute top-0 right-0 bg-[#15803d] text-white text-[10px] font-bold px-3 py-1 rounded-bl-2xl flex items-center space-x-1 shadow-sm">
                         <Check size={12} />
-                        <span>จ่ายแล้ว</span>
+                        <span>โอนแล้ว</span>
+                      </div>
+                    ) : (
+                      <div className="absolute top-0 right-0 bg-amber-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-2xl flex items-center space-x-1 shadow-sm">
+                        <Clock size={12} />
+                        <span>ยังไม่ได้โอน</span>
                       </div>
                     )}
 
-                    <div className="flex justify-between items-start">
+                    <div className="flex justify-between items-start pt-1">
                       <div className="flex items-center space-x-3">
                         <div className="w-11 h-11 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center font-bold text-base border overflow-hidden shrink-0">
                           {emp.avatar_url ? (
@@ -472,6 +556,7 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
           </div>
         </div>
 
+        {/* MODAL สรุปและแจกแจงสลิปเงินเดือน */}
         {showPayslipModal && selectedEmp && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center p-0 sm:p-4 z-50 animate-in fade-in duration-200">
             <div className="bg-white w-full max-w-sm rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
@@ -479,7 +564,7 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
               <div className="p-4 px-5 border-b flex justify-between items-center bg-white shrink-0">
                 <div>
                   <h3 className="font-bold text-gray-800 text-base">
-                    {paidRecords[selectedEmp.id] ? 'สลิปเงินเดือน (จ่ายแล้ว)' : 'สรุปและปรับปรุงสลิปเงินเดือน'}
+                    {paidRecords[selectedEmp.id] ? 'สลิปเงินเดือน (โอนแล้ว)' : 'สรุปและปรับปรุงสลิปเงินเดือน'}
                   </h3>
                   <p className="text-xs text-emerald-700 font-semibold mt-0.5">
                     {selectedEmp.name} ({selectedEmp.position || 'พนักงาน'})
@@ -495,96 +580,141 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
 
               <div className="p-5 overflow-y-auto space-y-4 text-xs flex-1">
                 
+                {/* 1. สรุปยอดโอนสุทธิ */}
                 <div className="bg-emerald-50/70 p-4 rounded-3xl border border-emerald-100 text-center">
                   <span className="text-gray-500 text-[11px] font-medium block">ยอดเงินสุทธิที่ต้องโอนจริง</span>
                   <span className="text-3xl font-black text-[#15803d] font-mono mt-1 block">
-                    ฿{Math.max(
-                      0,
-                      selectedEmp.grossSalary +
-                        Number(adjustments.bonus || 0) -
-                        Number(adjustments.deduction || 0) -
-                        Number(adjustments.latePenalty || 0) -
-                        Number(adjustments.advanceDeduction || 0)
-                    ).toFixed(2)}
+                    ฿{modalNetTotal.toFixed(2)}
                   </span>
                 </div>
 
-                <div className="bg-gray-50 p-3.5 rounded-2xl flex justify-between items-center border border-gray-100 font-medium">
-                  <span className="text-gray-600">
-                    รายวัน {selectedEmp.daysWorked} วัน (วันละ ฿{selectedEmp.salary_rate})
-                  </span>
-                  <span className="font-bold text-gray-800 font-mono">
-                    ฿{selectedEmp.grossSalary.toFixed(2)}
-                  </span>
+                {/* 2. การ์ดสรุปประวัติการทำงาน (Work Summary) */}
+                <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-100 space-y-2">
+                  <div className="flex items-center space-x-1.5 text-gray-700 font-bold text-xs border-b pb-1.5">
+                    <Clock size={15} className="text-emerald-600" />
+                    <span>สรุปการทำงานรอบนี้</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs pt-0.5">
+                    <div className="bg-white p-2 rounded-xl border border-gray-100">
+                      <span className="text-[10px] text-gray-400 font-medium block">จำนวนวันทำงาน</span>
+                      <span className="font-bold text-gray-800 font-mono text-xs">{selectedEmp.daysWorked} วัน</span>
+                    </div>
+                    <div className="bg-white p-2 rounded-xl border border-gray-100">
+                      <span className="text-[10px] text-gray-400 font-medium block">เวลามาสายสะสม</span>
+                      <span className="font-bold text-orange-600 font-mono text-xs">{selectedEmp.lateMinutes} นาที</span>
+                      <span className="text-[9px] text-gray-400 block font-normal">(หัก ฿{selectedEmp.late_penalty_rate || 0}/นาที)</span>
+                    </div>
+                  </div>
                 </div>
 
+                {/* 3. รายการเงินได้ (+) & รายการเงินหัก (-) แบบครบถ้วน */}
                 <div className="p-3.5 bg-white border border-gray-100 rounded-2xl space-y-3">
-                  <div className="flex items-center space-x-1.5 text-gray-700 font-bold text-xs border-b pb-2">
-                    <Sliders size={15} className="text-emerald-600" />
-                    <span>ปรับเพิ่ม-ลดพิเศษก่อนโอน (ถ้ามี)</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="text-[10px] font-bold text-emerald-700 block mb-1">
-                        + บวกเพิ่ม (OT/โบนัส)
-                      </label>
-                      <input
-                        type="number"
-                        disabled={!!paidRecords[selectedEmp.id]}
-                        value={adjustments.bonus}
-                        onChange={(e) => setAdjustments({ ...adjustments, bonus: e.target.value })}
-                        placeholder="0"
-                        className="w-full p-2.5 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 disabled:bg-gray-100 text-gray-700"
-                      />
+                  
+                  {/* Section A: รายการเงินได้ */}
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-1 text-emerald-700 font-bold text-xs border-b pb-1">
+                      <TrendingUp size={14} />
+                      <span>รายการเงินได้ (+)</span>
                     </div>
-
-                    <div>
-                      <label className="text-[10px] font-bold text-red-600 block mb-1">
-                        - หักอื่นๆ (ขาดงาน)
-                      </label>
-                      <input
-                        type="number"
-                        disabled={!!paidRecords[selectedEmp.id]}
-                        value={adjustments.deduction}
-                        onChange={(e) => setAdjustments({ ...adjustments, deduction: e.target.value })}
-                        placeholder="0"
-                        className="w-full p-2.5 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 disabled:bg-gray-100 text-gray-700"
-                      />
+                    <div className="flex justify-between text-gray-600 pl-2 text-xs">
+                      <span>ค่าจ้างพื้นฐาน ({selectedEmp.daysWorked} วัน × ฿{selectedEmp.salary_rate})</span>
+                      <span className="font-bold text-gray-800 font-mono">฿{grossVal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600 pl-2 text-xs">
+                      <span>โบนัส / ค่าล่วงเวลา (OT)</span>
+                      <span className="font-bold text-emerald-700 font-mono">+฿{bonusVal.toFixed(2)}</span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="text-[10px] font-bold text-gray-500 block mb-1">
-                        ยอดหักมาสาย (แก้ได้)
-                      </label>
-                      <input
-                        type="number"
-                        disabled={!!paidRecords[selectedEmp.id]}
-                        value={adjustments.latePenalty}
-                        onChange={(e) => setAdjustments({ ...adjustments, latePenalty: e.target.value })}
-                        placeholder="0.00"
-                        className="w-full p-2.5 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 disabled:bg-gray-100 text-gray-700"
-                      />
+                  {/* Section B: รายการเงินหัก */}
+                  <div className="space-y-2 pt-2 border-t border-gray-100">
+                    <div className="flex items-center space-x-1 text-red-600 font-bold text-xs border-b pb-1">
+                      <TrendingDown size={14} />
+                      <span>รายการเงินหัก (-)</span>
                     </div>
-
-                    <div>
-                      <label className="text-[10px] font-bold text-gray-500 block mb-1">
-                        หักเบิกล่วงหน้า (แก้ได้)
-                      </label>
-                      <input
-                        type="number"
-                        disabled={!!paidRecords[selectedEmp.id]}
-                        value={adjustments.advanceDeduction}
-                        onChange={(e) => setAdjustments({ ...adjustments, advanceDeduction: e.target.value })}
-                        placeholder="0.00"
-                        className="w-full p-2.5 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 disabled:bg-gray-100 text-gray-700"
-                      />
+                    <div className="flex justify-between text-gray-600 pl-2 text-xs">
+                      <span>หักมาสาย ({selectedEmp.lateMinutes} นาที)</span>
+                      <span className="font-bold text-red-600 font-mono">-฿{lateVal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600 pl-2 text-xs">
+                      <span>หักเบิกเงินล่วงหน้า</span>
+                      <span className="font-bold text-red-600 font-mono">-฿{advanceVal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600 pl-2 text-xs">
+                      <span>หักขาดงาน / อื่นๆ</span>
+                      <span className="font-bold text-red-600 font-mono">-฿{deductionVal.toFixed(2)}</span>
                     </div>
                   </div>
+
                 </div>
 
+                {/* 4. กล่องฟอร์มปรับแต่งยอด */}
+                {!paidRecords[selectedEmp.id] && (
+                  <div className="p-3.5 bg-gray-50 border border-gray-200/80 rounded-2xl space-y-3">
+                    <div className="flex items-center space-x-1.5 text-gray-700 font-bold text-xs border-b pb-2">
+                      <Sliders size={15} className="text-emerald-600" />
+                      <span>ปรับแก้ตัวเลขเงินสดล่วงหน้าก่อนโอน</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="text-[10px] font-bold text-emerald-700 block mb-1">
+                          + บวกเพิ่ม (OT/โบนัส)
+                        </label>
+                        <input
+                          type="number"
+                          value={adjustments.bonus}
+                          onChange={(e) => setAdjustments({ ...adjustments, bonus: e.target.value })}
+                          placeholder="0"
+                          className="w-full p-2.5 border rounded-xl bg-white text-center font-mono focus:outline-none focus:border-emerald-600 text-gray-700 font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold text-red-600 block mb-1">
+                          - หักอื่นๆ (ขาดงาน)
+                        </label>
+                        <input
+                          type="number"
+                          value={adjustments.deduction}
+                          onChange={(e) => setAdjustments({ ...adjustments, deduction: e.target.value })}
+                          placeholder="0"
+                          className="w-full p-2.5 border rounded-xl bg-white text-center font-mono focus:outline-none focus:border-emerald-600 text-gray-700 font-bold"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-500 block mb-1">
+                          หักมาสาย (แก้ไขได้)
+                        </label>
+                        <input
+                          type="number"
+                          value={adjustments.latePenalty}
+                          onChange={(e) => setAdjustments({ ...adjustments, latePenalty: e.target.value })}
+                          placeholder="0.00"
+                          className="w-full p-2.5 border rounded-xl bg-white text-center font-mono focus:outline-none focus:border-emerald-600 text-gray-700 font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold text-gray-500 block mb-1">
+                          หักเบิกเงิน (แก้ไขได้)
+                        </label>
+                        <input
+                          type="number"
+                          value={adjustments.advanceDeduction}
+                          onChange={(e) => setAdjustments({ ...adjustments, advanceDeduction: e.target.value })}
+                          placeholder="0.00"
+                          className="w-full p-2.5 border rounded-xl bg-white text-center font-mono focus:outline-none focus:border-emerald-600 text-gray-700 font-bold"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 5. กล่องข้อมูลบัญชีรับเงินพนักงาน + ปุ่มดาวน์โหลด QR Code */}
                 <div className="p-4 bg-gray-50 border rounded-2xl space-y-3">
                   <div className="flex items-center space-x-1.5 text-gray-800 font-bold text-xs">
                     <CreditCard size={15} className="text-emerald-700" />
@@ -592,7 +722,7 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
                   </div>
 
                   {selectedEmp.bank_name || selectedEmp.bank_account_no ? (
-                    <div className="space-y-1 text-xs">
+                    <div className="space-y-2 text-xs">
                       <div className="flex justify-between">
                         <span className="text-gray-400">ธนาคาร:</span>
                         <span className="font-bold text-emerald-800">{selectedEmp.bank_name || 'ไม่ระบุ'}</span>
@@ -605,12 +735,38 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
                         <span className="text-gray-400">ชื่อบัญชี:</span>
                         <span className="font-semibold text-gray-700">{selectedEmp.bank_account_name || selectedEmp.name}</span>
                       </div>
+
+                      {selectedEmp.qr_code_url && (
+                        <div className="pt-2 border-t border-gray-200 text-center space-y-1.5">
+                          <span className="text-[10px] text-gray-500 font-bold block">
+                            รูป QR Code สำหรับสแกนรับเงิน
+                          </span>
+                          <div className="p-2 bg-white rounded-xl border border-gray-200 inline-block shadow-sm">
+                            <img
+                              src={selectedEmp.qr_code_url}
+                              alt="QR Code รับเงิน"
+                              className="w-36 h-36 object-contain rounded-lg mx-auto"
+                            />
+                          </div>
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadQR(selectedEmp.qr_code_url, selectedEmp.name)}
+                              className="mt-1 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-[#15803d] font-bold text-[11px] rounded-xl inline-flex items-center space-x-1.5 border border-emerald-200 transition active:scale-95 shadow-sm"
+                            >
+                              <Download size={13} />
+                              <span>ดาวน์โหลด QR Code สแกนจ่าย</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <p className="text-xs text-amber-600 italic">พนักงานยังไม่ได้กรอกข้อมูลธนาคาร</p>
                   )}
                 </div>
 
+                {/* 6. แนบหลักฐานสลิปการโอนเงิน */}
                 <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl space-y-3">
                   <div className="flex items-center justify-between text-xs font-bold text-emerald-900">
                     <div className="flex items-center space-x-1.5">
