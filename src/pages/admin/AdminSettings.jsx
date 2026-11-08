@@ -244,64 +244,63 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
           <div className="p-4 space-y-4">
             
             {/* CARD 1: ข้อมูลสาขา */}
-            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3">
+            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3 overflow-hidden box-border">
               <div className="flex items-center space-x-2.5 text-gray-800 font-extrabold text-sm border-b border-gray-50 pb-2.5">
-                <div className="w-8 h-8 bg-emerald-100/70 text-[#15803d] rounded-xl flex items-center justify-center">
+                <div className="w-8 h-8 bg-emerald-100/70 text-[#15803d] rounded-xl flex items-center justify-center shrink-0">
                   <Store size={18} />
                 </div>
                 <span>ข้อมูลร้าน</span>
               </div>
 
-              <div>
+              <div className="w-full min-w-0">
                 <label className="text-xs font-bold text-gray-700 block mb-1.5">ชื่อร้าน / สาขา</label>
                 <input
                   type="text"
                   value={shopName}
                   onChange={(e) => setShopName(e.target.value)}
                   placeholder="เช่น ร้านตัวอย่าง สาขา1"
-                  className="w-full min-w-0 p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-medium"
+                  className="w-full min-w-0 max-w-full box-border block p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-medium"
                 />
               </div>
             </div>
 
-            {/* CARD 2: เวลาทำงานและวันหยุดตั้งต้นของร้าน (ปรับแก้เรื่องเวลาล้นกรอบ) */}
-            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3.5">
+            {/* CARD 2: เวลาทำงานและวันหยุดตั้งต้นของร้าน (แก้ปัญหา iOS time input ล้นขอบ) */}
+            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3.5 overflow-hidden box-border">
               <div className="flex items-center space-x-2.5 text-gray-800 font-extrabold text-sm border-b border-gray-50 pb-2.5">
-                <div className="w-8 h-8 bg-purple-100/70 text-purple-600 rounded-xl flex items-center justify-center">
+                <div className="w-8 h-8 bg-purple-100/70 text-purple-600 rounded-xl flex items-center justify-center shrink-0">
                   <Clock size={18} />
                 </div>
-                <span>เวลาทำงานและวันหยุดตั้งต้นของร้าน</span>
+                <span className="truncate">เวลาทำงานและวันหยุดตั้งต้นของร้าน</span>
               </div>
 
-              {/* ปรับ Input เวลาเป็น Grid 2 คอลัมน์ กระชับสวยงาม ไม่ทะลุกรอบมือถือ */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="min-w-0">
-                  <label className="text-[11px] font-bold text-gray-700 block mb-1">เวลาเข้างานมาตรฐาน</label>
+              <div className="w-full min-w-0 space-y-3">
+                <div className="w-full min-w-0 max-w-full">
+                  <label className="text-[11px] font-bold text-gray-700 block mb-1 text-center">เวลาเข้างานมาตรฐาน</label>
                   <input
                     type="time"
                     value={workStart}
                     onChange={(e) => setWorkStart(e.target.value)}
-                    className="w-full min-w-0 px-2.5 py-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold text-gray-800 text-center"
+                    className="w-full max-w-full min-w-0 box-border block p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold text-gray-800 text-center appearance-none [-webkit-appearance:none] [&::-webkit-date-and-time-value]:text-center [&::-webkit-date-and-time-value]:m-0"
                   />
                 </div>
 
-                <div className="min-w-0">
-                  <label className="text-[11px] font-bold text-gray-700 block mb-1">เวลาออกงานมาตรฐาน</label>
+                <div className="w-full min-w-0 max-w-full">
+                  <label className="text-[11px] font-bold text-gray-700 block mb-1 text-center">เวลาออกงานมาตรฐาน</label>
                   <input
                     type="time"
                     value={workEnd}
                     onChange={(e) => setWorkEnd(e.target.value)}
-                    className="w-full min-w-0 px-2.5 py-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold text-gray-800 text-center"
+                    className="w-full max-w-full min-w-0 box-border block p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold text-gray-800 text-center appearance-none [-webkit-appearance:none] [&::-webkit-date-and-time-value]:text-center [&::-webkit-date-and-time-value]:m-0"
                   />
                 </div>
               </div>
 
-              <div>
+              <div className="w-full min-w-0">
                 <label className="text-[11px] font-bold text-gray-700 block mb-1">วันหยุดประจำร้าน (ค่าตั้งต้น)</label>
                 <select
                   value={offDay}
                   onChange={(e) => setOffDay(e.target.value)}
-                  className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-medium text-gray-800"
+                  className="w-full max-w-full min-w-0 box-border block p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-medium text-gray-800"
                 >
                   <option value="ไม่มีวันหยุด">ไม่มีวันหยุด</option>
                   <option value="วันจันทร์">วันจันทร์</option>
@@ -316,10 +315,10 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
             </div>
 
             {/* CARD 3: พิกัดลงเวลา (GPS) */}
-            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3.5">
+            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3.5 overflow-hidden box-border">
               <div className="flex justify-between items-center border-b border-gray-50 pb-2.5">
                 <div className="flex items-center space-x-2.5 text-gray-800 font-extrabold text-sm">
-                  <div className="w-8 h-8 bg-emerald-100/70 text-[#15803d] rounded-xl flex items-center justify-center">
+                  <div className="w-8 h-8 bg-emerald-100/70 text-[#15803d] rounded-xl flex items-center justify-center shrink-0">
                     <MapPin size={18} />
                   </div>
                   <span>พิกัดลงเวลา (GPS)</span>
@@ -352,7 +351,7 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="พิมพ์ชื่อสถานที่, ถนน หรืออำเภอ..."
-                  className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs"
+                  className="w-full min-w-0 max-w-full box-border block p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs"
                 />
                 <button
                   type="submit"
@@ -378,7 +377,7 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
-                <div className="min-w-0">
+                <div className="min-w-0 max-w-full">
                   <label className="text-[11px] font-bold text-gray-600 block mb-1">ละติจูด (Latitude)</label>
                   <input
                     type="number"
@@ -386,11 +385,11 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
                     value={latitude}
                     onChange={(e) => setLatitude(e.target.value)}
                     placeholder="6.8202259"
-                    className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-mono text-xs"
+                    className="w-full min-w-0 max-w-full box-border block p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-mono text-xs"
                   />
                 </div>
 
-                <div className="min-w-0">
+                <div className="min-w-0 max-w-full">
                   <label className="text-[11px] font-bold text-gray-600 block mb-1">ลองจิจูด (Longitude)</label>
                   <input
                     type="number"
@@ -398,12 +397,12 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
                     value={longitude}
                     onChange={(e) => setLongitude(e.target.value)}
                     placeholder="101.2804537"
-                    className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-mono text-xs"
+                    className="w-full min-w-0 max-w-full box-border block p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-mono text-xs"
                   />
                 </div>
               </div>
 
-              <div>
+              <div className="w-full min-w-0">
                 <div className="flex justify-between items-center mb-1">
                   <label className="text-[11px] font-bold text-gray-700">ระยะทางที่อนุญาตให้ลงเวลาได้ (เมตร)</label>
                   <span className="text-[10px] font-bold text-emerald-600">แนะนำ: 50 - 150 เมตร</span>
@@ -413,7 +412,7 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
                   value={radiusMeters}
                   onChange={(e) => setRadiusMeters(e.target.value)}
                   placeholder="100"
-                  className="w-full min-w-0 p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold"
+                  className="w-full min-w-0 max-w-full box-border block p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold"
                 />
               </div>
 
@@ -429,9 +428,9 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
             </div>
 
             {/* CARD 4: เปลี่ยนชื่อผู้ใช้งาน & รหัสผ่านแอดมิน */}
-            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3.5">
+            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3.5 overflow-hidden box-border">
               <div className="flex items-center space-x-2.5 text-gray-800 font-extrabold text-sm border-b border-gray-50 pb-2.5">
-                <div className="w-8 h-8 bg-blue-100/80 text-blue-700 rounded-xl flex items-center justify-center">
+                <div className="w-8 h-8 bg-blue-100/80 text-blue-700 rounded-xl flex items-center justify-center shrink-0">
                   <ShieldCheck size={18} />
                 </div>
                 <div>
@@ -442,59 +441,59 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
 
               {accountError && (
                 <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-xs font-semibold flex items-center space-x-1.5">
-                  <AlertCircle size={15} />
+                  <AlertCircle size={15} className="shrink-0" />
                   <span>{accountError}</span>
                 </div>
               )}
 
               {accountSuccess && (
                 <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl text-xs font-semibold flex items-center space-x-1.5">
-                  <CheckCircle2 size={15} />
+                  <CheckCircle2 size={15} className="shrink-0" />
                   <span>{accountSuccess}</span>
                 </div>
               )}
 
               <form onSubmit={handleSaveAccountCredentials} className="space-y-3">
-                <div>
+                <div className="w-full min-w-0">
                   <label className="text-xs font-bold text-gray-700 block mb-1">ชื่อผู้ใช้งานเข้าสู่ระบบ</label>
                   <div className="relative flex items-center">
-                    <User size={16} className="absolute left-3.5 text-gray-400" />
+                    <User size={16} className="absolute left-3.5 text-gray-400 pointer-events-none" />
                     <input
                       type="text"
                       value={adminUsername}
                       onChange={(e) => setAdminUsername(e.target.value)}
                       placeholder="เช่น admin หรือ admin_shop1"
-                      className="w-full min-w-0 pl-10 pr-3 py-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-semibold text-gray-800"
+                      className="w-full min-w-0 max-w-full box-border block pl-10 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-semibold text-gray-800"
                       required
                     />
                   </div>
                 </div>
 
-                <div>
+                <div className="w-full min-w-0">
                   <label className="text-xs font-bold text-gray-700 block mb-1">รหัสผ่านใหม่</label>
                   <div className="relative flex items-center">
-                    <Lock size={16} className="absolute left-3.5 text-gray-400" />
+                    <Lock size={16} className="absolute left-3.5 text-gray-400 pointer-events-none" />
                     <input
                       type="password"
                       value={newPin}
                       onChange={(e) => setNewPin(e.target.value)}
                       placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยนรหัสผ่าน"
-                      className="w-full min-w-0 pl-10 pr-3 py-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold"
+                      className="w-full min-w-0 max-w-full box-border block pl-10 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold"
                     />
                   </div>
                 </div>
 
                 {newPin && (
-                  <div>
+                  <div className="w-full min-w-0">
                     <label className="text-xs font-bold text-gray-700 block mb-1">ยืนยันรหัสผ่านใหม่</label>
                     <div className="relative flex items-center">
-                      <Key size={16} className="absolute left-3.5 text-gray-400" />
+                      <Key size={16} className="absolute left-3.5 text-gray-400 pointer-events-none" />
                       <input
                         type="password"
                         value={confirmPin}
                         onChange={(e) => setConfirmPin(e.target.value)}
                         placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง"
-                        className="w-full min-w-0 pl-10 pr-3 py-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold"
+                        className="w-full min-w-0 max-w-full box-border block pl-10 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold"
                         required
                       />
                     </div>
