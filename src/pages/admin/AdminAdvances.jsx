@@ -83,86 +83,87 @@ export default function AdminAdvances({ selectedBranch, onBack, onTabChange }) {
     filterStatus === 'approved' ? approvedList : rejectedList;
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center items-start p-0 sm:p-4">
-      {/* ล็อคขนาดกรอบมือถือ h-screen sm:h-[720px] ไม่ให้ยืดตามเนื้อหา */}
-      <div className="w-full max-w-sm bg-gray-50 h-screen sm:h-[720px] sm:rounded-[36px] shadow-2xl overflow-hidden border border-gray-100 flex flex-col relative">
+    <div className="min-h-screen w-full bg-gray-50 flex flex-col relative overflow-x-hidden">
+      
+      {/* ส่วนเนื้อหาหลัก สามารถ Scroll ได้ */}
+      <div className="flex-1 pb-24 w-full">
         
-        {/* ส่วนเนื้อหาภายในที่สามารถ Scroll ได้ */}
-        <div className="flex-1 overflow-y-auto pb-24">
-          
-          {/* Header สีเขียวทรงโค้ง */}
-          <div className="bg-[#15803d] p-5 text-white rounded-b-[32px] shadow-md sticky top-0 z-20">
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={onBack}
-                className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition backdrop-blur-sm"
-              >
-                <ArrowLeft size={20} />
-              </button>
-              <div>
-                <h1 className="font-extrabold text-base leading-tight">ขอเบิกเงินล่วงหน้า</h1>
-                <p className="text-[11px] text-emerald-100 font-light">
-                  สาขา: {selectedBranch?.shop_name || 'สาขาหลัก'}
-                </p>
-              </div>
+        {/* Header สีเขียวทรงโค้ง ขยายเต็มความกว้าง */}
+        <div className="bg-[#15803d] p-5 sm:p-6 text-white rounded-b-[32px] sm:rounded-b-[40px] shadow-md sticky top-0 z-20 w-full">
+          <div className="max-w-3xl mx-auto flex items-center space-x-3">
+            <button
+              onClick={onBack}
+              className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition backdrop-blur-sm cursor-pointer"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <div>
+              <h1 className="font-extrabold text-base sm:text-lg leading-tight">ขอเบิกเงินล่วงหน้า</h1>
+              <p className="text-[11px] sm:text-xs text-emerald-100 font-light">
+                สาขา: {selectedBranch?.shop_name || 'สาขาหลัก'}
+              </p>
             </div>
           </div>
+        </div>
+
+        {/* คอนเทนเนอร์หลักตรงกลาง */}
+        <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-4">
 
           {/* แจ้งเตือนอัปเดตสำเร็จ */}
           {successToast && (
-            <div className="m-4 mb-0 p-3.5 bg-emerald-100 border border-emerald-300 text-[#15803d] rounded-2xl text-xs font-bold flex items-center space-x-2 shadow-sm animate-in fade-in zoom-in duration-200">
+            <div className="p-3.5 bg-emerald-100 border border-emerald-300 text-[#15803d] rounded-2xl text-xs sm:text-sm font-bold flex items-center space-x-2 shadow-sm animate-in fade-in zoom-in duration-200">
               <CheckCircle2 size={18} />
               <span>อัปเดตรายการเบิกเงินเรียบร้อยแล้ว</span>
             </div>
           )}
 
           {/* Filter Tabs (รออนุมัติ / อนุมัติแล้ว / ปฏิเสธ) */}
-          <div className="p-4 pb-2">
-            <div className="grid grid-cols-3 gap-1.5 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
-              <button
-                onClick={() => setFilterStatus('pending')}
-                className={`py-2 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center space-x-1 ${
-                  filterStatus === 'pending'
-                    ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                <Clock size={13} />
-                <span>รออนุมัติ ({pendingList.length})</span>
-              </button>
+          <div className="grid grid-cols-3 gap-1.5 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
+            <button
+              onClick={() => setFilterStatus('pending')}
+              className={`py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer ${
+                filterStatus === 'pending'
+                  ? 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <Clock size={14} />
+              <span>รออนุมัติ ({pendingList.length})</span>
+            </button>
 
-              <button
-                onClick={() => setFilterStatus('approved')}
-                className={`py-2 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center space-x-1 ${
-                  filterStatus === 'approved'
-                    ? 'bg-emerald-50 text-[#15803d] border border-emerald-200/60'
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                <CheckCircle2 size={13} />
-                <span>อนุมัติแล้ว ({approvedList.length})</span>
-              </button>
+            <button
+              onClick={() => setFilterStatus('approved')}
+              className={`py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer ${
+                filterStatus === 'approved'
+                  ? 'bg-emerald-50 text-[#15803d] border border-emerald-200/60'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <CheckCircle2 size={14} />
+              <span>อนุมัติแล้ว ({approvedList.length})</span>
+            </button>
 
-              <button
-                onClick={() => setFilterStatus('rejected')}
-                className={`py-2 px-2 rounded-xl text-[11px] font-bold transition flex items-center justify-center space-x-1 ${
-                  filterStatus === 'rejected'
-                    ? 'bg-red-50 text-red-600 border border-red-200/60'
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                <XCircle size={13} />
-                <span>ปฏิเสธ ({rejectedList.length})</span>
-              </button>
-            </div>
+            <button
+              onClick={() => setFilterStatus('rejected')}
+              className={`py-2 px-2 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 cursor-pointer ${
+                filterStatus === 'rejected'
+                  ? 'bg-red-50 text-red-600 border border-red-200/60'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <XCircle size={14} />
+              <span>ปฏิเสธ ({rejectedList.length})</span>
+            </button>
           </div>
 
           {/* รายการคำขอเบิกเงิน */}
-          <div className="p-4 space-y-3 pt-1">
+          <div className="space-y-3 pt-1">
             {loading ? (
-              <div className="text-center py-10 text-xs text-gray-400">กำลังโหลดรายการ...</div>
+              <div className="text-center py-12 text-xs sm:text-sm text-gray-400">กำลังโหลดรายการ...</div>
             ) : displayedList.length === 0 ? (
-              <div className="text-center py-12 text-xs text-gray-400">ไม่พบรายการขอเบิกเงินในหมวดนี้</div>
+              <div className="text-center py-16 text-xs sm:text-sm text-gray-400 bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
+                ไม่พบรายการขอเบิกเงินในหมวดนี้
+              </div>
             ) : (
               displayedList.map((item) => {
                 const user = item.users || {};
@@ -172,11 +173,11 @@ export default function AdminAdvances({ selectedBranch, onBack, onTabChange }) {
                 return (
                   <div
                     key={item.id}
-                    className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3 relative overflow-hidden"
+                    className="bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-gray-100 space-y-3 relative overflow-hidden"
                   >
                     <div className="flex justify-between items-start">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-11 h-11 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center font-bold text-base border overflow-hidden shrink-0">
+                      <div className="flex items-center space-x-3.5">
+                        <div className="w-11 h-11 sm:w-13 sm:h-13 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center font-bold text-base sm:text-lg border overflow-hidden shrink-0">
                           {user.avatar_url ? (
                             <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
                           ) : (
@@ -185,15 +186,15 @@ export default function AdminAdvances({ selectedBranch, onBack, onTabChange }) {
                         </div>
 
                         <div>
-                          <h3 className="font-bold text-gray-800 text-sm">{user.name || 'พนักงาน'}</h3>
-                          <p className="text-[10px] text-gray-400">
+                          <h3 className="font-bold text-gray-800 text-sm sm:text-base">{user.name || 'พนักงาน'}</h3>
+                          <p className="text-[10px] sm:text-xs text-gray-400">
                             {user.position || 'พนักงาน'} • {dateStr}
                           </p>
                         </div>
                       </div>
 
                       <div className="text-right">
-                        <span className="text-lg font-black text-[#15803d] font-mono">
+                        <span className="text-lg sm:text-xl font-black text-[#15803d] font-mono">
                           ฿{Number(item.amount || 0).toFixed(2)}
                         </span>
                       </div>
@@ -201,7 +202,7 @@ export default function AdminAdvances({ selectedBranch, onBack, onTabChange }) {
 
                     {/* เหตุผลการขอเบิก */}
                     {item.reason && (
-                      <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100 text-xs text-gray-600">
+                      <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 text-xs sm:text-sm text-gray-600">
                         <span className="font-bold text-gray-700">เหตุผล: </span>
                         <span>{item.reason}</span>
                       </div>
@@ -209,7 +210,7 @@ export default function AdminAdvances({ selectedBranch, onBack, onTabChange }) {
 
                     {/* ข้อมูลบัญชีรับเงิน */}
                     {(user.bank_name || user.bank_account_no) && (
-                      <div className="bg-emerald-50/50 p-2.5 rounded-xl border border-emerald-100 text-[11px] space-y-0.5">
+                      <div className="bg-emerald-50/50 p-3 rounded-2xl border border-emerald-100 text-xs space-y-1">
                         <div className="flex justify-between text-gray-600">
                           <span>บัญชีรับเงิน:</span>
                           <span className="font-bold text-emerald-800">{user.bank_name} {user.bank_account_no}</span>
@@ -225,27 +226,27 @@ export default function AdminAdvances({ selectedBranch, onBack, onTabChange }) {
 
                     {/* ปุ่มอนุมัติ / ปฏิเสธ หรือ แสดงสถานะ */}
                     {item.status === 'pending' ? (
-                      <div className="grid grid-cols-2 gap-2 pt-1">
+                      <div className="grid grid-cols-2 gap-2.5 pt-1">
                         <button
                           onClick={() => handleUpdateStatus(item.id, 'rejected')}
-                          className="py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-2xl text-xs flex items-center justify-center space-x-1 border border-red-200/70 transition"
+                          className="py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-2xl text-xs sm:text-sm flex items-center justify-center space-x-1 border border-red-200/70 transition cursor-pointer"
                         >
-                          <X size={15} />
+                          <X size={16} />
                           <span>ปฏิเสธ</span>
                         </button>
 
                         <button
                           onClick={() => handleUpdateStatus(item.id, 'approved')}
-                          className="py-2.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-1 shadow-md transition active:scale-95"
+                          className="py-2.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl text-xs sm:text-sm flex items-center justify-center space-x-1 shadow-md transition active:scale-95 cursor-pointer"
                         >
-                          <Check size={15} />
+                          <Check size={16} />
                           <span>อนุมัติ & โอนเงิน</span>
                         </button>
                       </div>
                     ) : (
-                      <div className="pt-1 flex justify-between items-center text-xs">
+                      <div className="pt-1 flex justify-between items-center text-xs sm:text-sm">
                         <span className="text-gray-400">สถานะ:</span>
-                        <span className={`font-bold px-3 py-1 rounded-full text-[11px] ${
+                        <span className={`font-bold px-3 py-1 rounded-full text-xs ${
                           item.status === 'approved' 
                             ? 'bg-emerald-100 text-[#15803d]' 
                             : 'bg-red-100 text-red-600'
@@ -260,43 +261,43 @@ export default function AdminAdvances({ selectedBranch, onBack, onTabChange }) {
             )}
           </div>
         </div>
-
-        {/* ==================== BOTTOM NAVIGATION BAR (ล็อคตำแหน่งคงที่) ==================== */}
-        <div className="absolute bottom-3 left-4 right-4 bg-white/90 backdrop-blur-md rounded-[28px] shadow-lg border border-gray-100 p-1.5 flex justify-around items-center z-30">
-          <button
-            onClick={() => onTabChange ? onTabChange('home') : onBack()}
-            className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600"
-          >
-            <Home size={20} className="text-gray-400" />
-            <span className="text-[10px] mt-0.5">หน้าแรก</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange ? onTabChange('employees') : onBack()}
-            className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600"
-          >
-            <Users size={20} className="text-gray-400" />
-            <span className="text-[10px] mt-0.5">พนักงาน</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange ? onTabChange('payroll') : onBack()}
-            className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600"
-          >
-            <Calculator size={20} className="text-gray-400" />
-            <span className="text-[10px] mt-0.5">เงินเดือน</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange ? onTabChange('settings') : onBack()}
-            className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600"
-          >
-            <Settings size={20} className="text-gray-400" />
-            <span className="text-[10px] mt-0.5">ตั้งค่า</span>
-          </button>
-        </div>
-
       </div>
+
+      {/* BOTTOM NAVIGATION BAR จัดกลางตามทุกขนาดหน้าจอ */}
+      <div className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md bg-white/95 backdrop-blur-md rounded-[28px] shadow-xl border border-gray-100 p-1.5 flex justify-around items-center z-30">
+        <button
+          onClick={() => onTabChange ? onTabChange('home') : onBack()}
+          className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <Home size={20} className="text-gray-400" />
+          <span className="text-[10px] mt-0.5">หน้าแรก</span>
+        </button>
+
+        <button
+          onClick={() => onTabChange ? onTabChange('employees') : onBack()}
+          className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <Users size={20} className="text-gray-400" />
+          <span className="text-[10px] mt-0.5">พนักงาน</span>
+        </button>
+
+        <button
+          onClick={() => onTabChange ? onTabChange('payroll') : onBack()}
+          className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <Calculator size={20} className="text-gray-400" />
+          <span className="text-[10px] mt-0.5">เงินเดือน</span>
+        </button>
+
+        <button
+          onClick={() => onTabChange ? onTabChange('settings') : onBack()}
+          className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <Settings size={20} className="text-gray-400" />
+          <span className="text-[10px] mt-0.5">ตั้งค่า</span>
+        </button>
+      </div>
+
     </div>
   );
 }

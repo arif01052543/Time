@@ -163,439 +163,439 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
     filterType === 'full_time' ? fullTimeEmps : partTimeEmps;
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center items-start p-0 sm:p-4">
-      <div className="w-full max-w-sm bg-gray-50 h-screen sm:h-[720px] sm:rounded-[36px] shadow-2xl overflow-hidden border border-gray-100 flex flex-col relative">
+    <div className="min-h-screen w-full bg-gray-50 flex flex-col relative overflow-x-hidden">
+      
+      {/* ส่วนเนื้อหาหลัก สามารถ Scroll ได้ */}
+      <div className="flex-1 pb-24 w-full">
         
-        {/* ส่วนเนื้อหาภายใน Scroll ได้ */}
-        <div className="flex-1 overflow-y-auto pb-24">
-          
-          {/* Header สีเขียว */}
-          <div className="bg-[#15803d] p-5 text-white rounded-b-[32px] shadow-md sticky top-0 z-20">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={onBack}
-                  className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition backdrop-blur-sm"
-                >
-                  <ArrowLeft size={20} />
-                </button>
-                <div>
-                  <h1 className="font-extrabold text-base leading-tight">จัดการพนักงาน</h1>
-                  <p className="text-[11px] text-emerald-100 font-light">
-                    ชื่อร้าน: {selectedBranch?.shop_name || 'สาขาหลัก'}
-                  </p>
-                </div>
+        {/* Header สีเขียวทรงโค้ง ขยายเต็มความกว้าง */}
+        <div className="bg-[#15803d] p-5 sm:p-6 text-white rounded-b-[32px] sm:rounded-b-[40px] shadow-md sticky top-0 z-20 w-full">
+          <div className="max-w-3xl mx-auto flex justify-between items-center">
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={onBack}
+                className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition backdrop-blur-sm cursor-pointer"
+              >
+                <ArrowLeft size={20} />
+              </button>
+              <div>
+                <h1 className="font-extrabold text-base sm:text-lg leading-tight">จัดการพนักงาน</h1>
+                <p className="text-[11px] sm:text-xs text-emerald-100 font-light">
+                  ชื่อร้าน: {selectedBranch?.shop_name || 'สาขาหลัก'}
+                </p>
               </div>
-
-              <button
-                onClick={handleOpenAddModal}
-                className="bg-white text-[#15803d] hover:bg-emerald-50 text-xs font-bold px-3 py-2 rounded-2xl flex items-center space-x-1 shadow-md transition active:scale-95"
-              >
-                <UserPlus size={15} />
-                <span>เพิ่มพนักงาน</span>
-              </button>
-            </div>
-          </div>
-
-          {/* รายชื่อพนักงาน */}
-          <div className="p-4 space-y-3">
-            
-            {/* Filter Tabs 3 หมวด */}
-            <div className="grid grid-cols-3 gap-1 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm text-center">
-              <button
-                onClick={() => setFilterType('pending')}
-                className={`py-2 px-1 rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1 transition ${
-                  filterType === 'pending'
-                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                <Clock size={13} />
-                <span>รออนุมัติ ({pendingEmps.length})</span>
-              </button>
-
-              <button
-                onClick={() => setFilterType('full_time')}
-                className={`py-2 px-1 rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1 transition ${
-                  filterType === 'full_time'
-                    ? 'bg-emerald-50 text-[#15803d] border border-emerald-200'
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                <Briefcase size={13} />
-                <span>ประจำ ({fullTimeEmps.length})</span>
-              </button>
-
-              <button
-                onClick={() => setFilterType('part_time')}
-                className={`py-2 px-1 rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1 transition ${
-                  filterType === 'part_time'
-                    ? 'bg-emerald-50 text-[#15803d] border border-emerald-200'
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                <Clock size={13} />
-                <span>พาร์ทไทม์ ({partTimeEmps.length})</span>
-              </button>
             </div>
 
-            {/* การ์ดพนักงาน */}
-            <div className="space-y-3 pt-1">
-              {loading ? (
-                <div className="text-center py-10 text-xs text-gray-400">กำลังโหลดข้อมูล...</div>
-              ) : displayedEmps.length === 0 ? (
-                <div className="text-center py-12 text-xs text-gray-400">ไม่พบรายชื่อพนักงานในหมวดนี้</div>
-              ) : (
-                displayedEmps.map((emp) => (
-                  <div
-                    key={emp.id}
-                    className={`bg-white rounded-3xl p-4 shadow-sm border transition relative overflow-hidden space-y-3 ${
-                      emp.status === 'pending' ? 'border-amber-300 ring-1 ring-amber-300/40' : 'border-gray-100'
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center font-bold text-base border overflow-hidden shrink-0">
-                          {emp.avatar_url ? (
-                            <img src={emp.avatar_url} alt={emp.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <span>{emp.name ? emp.name.charAt(0) : 'U'}</span>
-                          )}
-                        </div>
-
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <h3 className="font-bold text-gray-800 text-sm leading-none">{emp.name}</h3>
-                            <span className="text-[10px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-md">
-                              #{emp.pin_code || '----'}
-                            </span>
-                          </div>
-
-                          <p className="text-xs font-bold text-emerald-600">
-                            {emp.position || 'พนักงานเสิร์ฟ'}
-                          </p>
-
-                          {emp.status !== 'pending' && (
-                            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg">
-                                ฿{emp.salary_rate} /{emp.employment_type === 'part_time' ? 'ชม.' : 'วัน'}
-                              </span>
-
-                              <span className="text-[10px] font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-lg">
-                                กะ {emp.work_start || '16:00'} - {emp.work_end || '00:00'} น.
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {emp.status !== 'pending' && (
-                        <div className="flex items-center space-x-1.5">
-                          <button
-                            onClick={() => handleOpenEditModal(emp)}
-                            className="w-9 h-9 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center transition"
-                          >
-                            <Edit3 size={16} />
-                          </button>
-
-                          <button
-                            onClick={() => handleDelete(emp.id, emp.name)}
-                            className="w-9 h-9 bg-red-50 hover:bg-red-100 text-red-500 rounded-full flex items-center justify-center transition"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* ข้อมูลบัญชีธนาคาร */}
-                    {emp.bank_name && (
-                      <div className="bg-gray-50 p-2.5 rounded-2xl border border-gray-100 text-[11px] text-gray-600 flex justify-between items-center">
-                        <span>รับเงินผ่าน: <strong className="font-bold text-emerald-800">{emp.bank_name}</strong></span>
-                        <span className="font-mono text-gray-500">{emp.bank_account_no}</span>
-                      </div>
-                    )}
-
-                    {/* ปุ่มอนุมัติสำหรับคำขอใหม่ (Pending) */}
-                    {emp.status === 'pending' && (
-                      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-100">
-                        <button
-                          onClick={() => handleReject(emp.id, emp.name)}
-                          className="py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-2xl text-xs flex items-center justify-center space-x-1 border border-red-200 transition"
-                        >
-                          <UserX size={15} />
-                          <span>ปฏิเสธคำขอ</span>
-                        </button>
-
-                        <button
-                          onClick={() => handleOpenEditModal(emp)}
-                          className="py-2.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-1 shadow-md transition active:scale-95"
-                        >
-                          <UserCheck size={15} />
-                          <span>ตรวจข้อมูล & อนุมัติ</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
+            <button
+              onClick={handleOpenAddModal}
+              className="bg-white text-[#15803d] hover:bg-emerald-50 text-xs sm:text-sm font-bold px-3.5 py-2 sm:py-2.5 rounded-2xl flex items-center space-x-1.5 shadow-md transition active:scale-95 cursor-pointer"
+            >
+              <UserPlus size={16} />
+              <span>เพิ่มพนักงาน</span>
+            </button>
           </div>
         </div>
 
-        {/* POPUP MODAL (อนุมัติ / แก้ไข) */}
-        {showModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center p-0 sm:p-4 z-50 animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-sm rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden">
-              
-              <div className="p-4 px-5 border-b flex justify-between items-center bg-white shrink-0">
-                <h3 className="font-bold text-gray-800 text-base">
-                  {editingEmp?.status === 'pending' ? 'ตั้งค่า & อนุมัติพนักงานใหม่' : editingEmp ? 'แก้ไขข้อมูลพนักงาน' : 'เพิ่มพนักงานใหม่'}
-                </h3>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="w-8 h-8 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-full flex items-center justify-center transition"
+        {/* รายชื่อพนักงาน และ ฟิลเตอร์ */}
+        <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-4">
+          
+          {/* Filter Tabs 3 หมวด */}
+          <div className="grid grid-cols-3 gap-1.5 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm text-center">
+            <button
+              onClick={() => setFilterType('pending')}
+              className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition cursor-pointer ${
+                filterType === 'pending'
+                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <Clock size={14} />
+              <span>รออนุมัติ ({pendingEmps.length})</span>
+            </button>
+
+            <button
+              onClick={() => setFilterType('full_time')}
+              className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition cursor-pointer ${
+                filterType === 'full_time'
+                  ? 'bg-emerald-50 text-[#15803d] border border-emerald-200'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <Briefcase size={14} />
+              <span>ประจำ ({fullTimeEmps.length})</span>
+            </button>
+
+            <button
+              onClick={() => setFilterType('part_time')}
+              className={`py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition cursor-pointer ${
+                filterType === 'part_time'
+                  ? 'bg-emerald-50 text-[#15803d] border border-emerald-200'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <Clock size={14} />
+              <span>พาร์ทไทม์ ({partTimeEmps.length})</span>
+            </button>
+          </div>
+
+          {/* การ์ดรายการพนักงาน */}
+          <div className="space-y-3 pt-1">
+            {loading ? (
+              <div className="text-center py-12 text-xs sm:text-sm text-gray-400">กำลังโหลดข้อมูล...</div>
+            ) : displayedEmps.length === 0 ? (
+              <div className="text-center py-16 text-xs sm:text-sm text-gray-400 bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
+                ไม่พบรายชื่อพนักงานในหมวดนี้
+              </div>
+            ) : (
+              displayedEmps.map((emp) => (
+                <div
+                  key={emp.id}
+                  className={`bg-white rounded-3xl p-4 sm:p-5 shadow-sm border transition relative overflow-hidden space-y-3 ${
+                    emp.status === 'pending' ? 'border-amber-300 ring-1 ring-amber-300/40' : 'border-gray-100'
+                  }`}
                 >
-                  <X size={18} />
-                </button>
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center space-x-3.5">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center font-bold text-base sm:text-lg border overflow-hidden shrink-0">
+                        {emp.avatar_url ? (
+                          <img src={emp.avatar_url} alt={emp.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span>{emp.name ? emp.name.charAt(0) : 'U'}</span>
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-bold text-gray-800 text-sm sm:text-base leading-none">{emp.name}</h3>
+                          <span className="text-[10px] sm:text-xs font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
+                            #{emp.pin_code || '----'}
+                          </span>
+                        </div>
+
+                        <p className="text-xs sm:text-sm font-bold text-emerald-600">
+                          {emp.position || 'พนักงานเสิร์ฟ'}
+                        </p>
+
+                        {emp.status !== 'pending' && (
+                          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                            <span className="text-[10px] sm:text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg">
+                              ฿{emp.salary_rate} /{emp.employment_type === 'part_time' ? 'ชม.' : 'วัน'}
+                            </span>
+
+                            <span className="text-[10px] sm:text-xs font-medium text-gray-600 bg-gray-100 px-2.5 py-0.5 rounded-lg">
+                              กะ {emp.work_start || '16:00'} - {emp.work_end || '00:00'} น.
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {emp.status !== 'pending' && (
+                      <div className="flex items-center space-x-1.5">
+                        <button
+                          onClick={() => handleOpenEditModal(emp)}
+                          className="w-9 h-9 sm:w-10 sm:h-10 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center transition cursor-pointer"
+                        >
+                          <Edit3 size={16} />
+                        </button>
+
+                        <button
+                          onClick={() => handleDelete(emp.id, emp.name)}
+                          className="w-9 h-9 sm:w-10 sm:h-10 bg-red-50 hover:bg-red-100 text-red-500 rounded-full flex items-center justify-center transition cursor-pointer"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ข้อมูลบัญชีธนาคาร */}
+                  {emp.bank_name && (
+                    <div className="bg-gray-50 p-2.5 sm:p-3 rounded-2xl border border-gray-100 text-[11px] sm:text-xs text-gray-600 flex justify-between items-center">
+                      <span>รับเงินผ่าน: <strong className="font-bold text-emerald-800">{emp.bank_name}</strong></span>
+                      <span className="font-mono text-gray-500">{emp.bank_account_no}</span>
+                    </div>
+                  )}
+
+                  {/* ปุ่มอนุมัติสำหรับคำขอใหม่ (Pending) */}
+                  {emp.status === 'pending' && (
+                    <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-100">
+                      <button
+                        onClick={() => handleReject(emp.id, emp.name)}
+                        className="py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-2xl text-xs sm:text-sm flex items-center justify-center space-x-1 border border-red-200 transition cursor-pointer"
+                      >
+                        <UserX size={15} />
+                        <span>ปฏิเสธคำขอ</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleOpenEditModal(emp)}
+                        className="py-2.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl text-xs sm:text-sm flex items-center justify-center space-x-1 shadow-md transition active:scale-95 cursor-pointer"
+                      >
+                        <UserCheck size={15} />
+                        <span>ตรวจข้อมูล & อนุมัติ</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* POPUP MODAL (อนุมัติ / แก้ไข) */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center p-0 sm:p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden">
+            
+            <div className="p-4 px-5 border-b flex justify-between items-center bg-white shrink-0">
+              <h3 className="font-bold text-gray-800 text-base">
+                {editingEmp?.status === 'pending' ? 'ตั้งค่า & อนุมัติพนักงานใหม่' : editingEmp ? 'แก้ไขข้อมูลพนักงาน' : 'เพิ่มพนักงานใหม่'}
+              </h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="w-8 h-8 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-full flex items-center justify-center transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form id="emp-form" onSubmit={handleSave} className="p-5 overflow-y-auto space-y-4 text-xs sm:text-sm flex-1">
+              
+              {/* รูปโปรไฟล์ */}
+              <div>
+                <label className="font-bold text-gray-700 block mb-1">รูปโปรไฟล์</label>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full border flex items-center justify-center overflow-hidden shrink-0">
+                    {formData.avatar_url ? (
+                      <img src={formData.avatar_url} alt="Avatar Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <Image size={20} className="text-gray-400" />
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, 'avatar_url')}
+                    className="text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
+                  />
+                </div>
               </div>
 
-              <form id="emp-form" onSubmit={handleSave} className="p-5 overflow-y-auto space-y-4 text-xs flex-1">
-                
-                {/* รูปโปรไฟล์ */}
-                <div>
-                  <label className="font-bold text-gray-700 block mb-1">รูปโปรไฟล์</label>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gray-100 rounded-full border flex items-center justify-center overflow-hidden shrink-0">
-                      {formData.avatar_url ? (
-                        <img src={formData.avatar_url} alt="Avatar Preview" className="w-full h-full object-cover" />
-                      ) : (
-                        <Image size={20} className="text-gray-400" />
-                      )}
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileUpload(e, 'avatar_url')}
-                      className="text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
-                    />
-                  </div>
-                </div>
+              <div>
+                <label className="font-bold text-gray-700 block mb-1">ชื่อ - นามสกุล</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
+                  required
+                />
+              </div>
 
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="font-bold text-gray-700 block mb-1">ชื่อ - นามสกุล</label>
+                  <label className="font-bold text-gray-700 block mb-1">รหัส PIN (4 หลัก)</label>
                   <input
                     type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs"
+                    maxLength={4}
+                    value={formData.pin_code}
+                    onChange={(e) => setFormData({ ...formData, pin_code: e.target.value })}
+                    placeholder="1234"
+                    className="w-full p-3 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-bold"
                     required
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="font-bold text-gray-700 block mb-1">รหัส PIN (4 หลัก)</label>
-                    <input
-                      type="text"
-                      maxLength={4}
-                      value={formData.pin_code}
-                      onChange={(e) => setFormData({ ...formData, pin_code: e.target.value })}
-                      placeholder="1234"
-                      className="w-full p-3 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-bold"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="font-bold text-gray-700 block mb-1">ตำแหน่งงาน</label>
-                    <input
-                      type="text"
-                      value={formData.position}
-                      onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                      className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs"
-                      required
-                    />
-                  </div>
+                <div>
+                  <label className="font-bold text-gray-700 block mb-1">ตำแหน่งงาน</label>
+                  <input
+                    type="text"
+                    value={formData.position}
+                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                    className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
+                    required
+                  />
                 </div>
-
-                <div className="grid grid-cols-2 gap-2.5 bg-emerald-50/70 p-3 rounded-2xl border border-emerald-100">
-                  <div>
-                    <label className="font-bold text-emerald-800 block mb-1">ประเภทการจ้าง</label>
-                    <select
-                      value={formData.employment_type}
-                      onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
-                      className="w-full p-2.5 border rounded-xl bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs"
-                    >
-                      <option value="full_time">ประจำ</option>
-                      <option value="part_time">พาร์ทไทม์</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="font-bold text-emerald-800 block mb-1">อัตราค่าจ้าง (บาท)</label>
-                    <input
-                      type="number"
-                      value={formData.salary_rate}
-                      onChange={(e) => setFormData({ ...formData, salary_rate: e.target.value })}
-                      placeholder="400"
-                      className="w-full p-2.5 border rounded-xl bg-white font-mono focus:outline-none focus:border-emerald-600 text-xs font-bold"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="font-bold text-gray-700 block mb-1">เวลาเข้างาน (กะ)</label>
-                    <input
-                      type="time"
-                      value={formData.work_start}
-                      onChange={(e) => setFormData({ ...formData, work_start: e.target.value })}
-                      className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="font-bold text-gray-700 block mb-1">เวลาออกงาน (กะ)</label>
-                    <input
-                      type="time"
-                      value={formData.work_end}
-                      onChange={(e) => setFormData({ ...formData, work_end: e.target.value })}
-                      className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="font-bold text-gray-700 block mb-1">วันหยุดประจำสัปดาห์</label>
-                    <select
-                      value={formData.off_day}
-                      onChange={(e) => setFormData({ ...formData, off_day: e.target.value })}
-                      className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs"
-                    >
-                      <option value="ไม่มีวันหยุด">ไม่มีวันหยุด</option>
-                      <option value="จันทร์">จันทร์</option>
-                      <option value="อังคาร">อังคาร</option>
-                      <option value="พุธ">พุธ</option>
-                      <option value="พฤหัสบดี">พฤหัสบดี</option>
-                      <option value="ศุกร์">ศุกร์</option>
-                      <option value="เสาร์">เสาร์</option>
-                      <option value="อาทิตย์">อาทิตย์</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="font-bold text-gray-700 block mb-1">หักมาสาย (บาท/นาที)</label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={formData.late_penalty_rate}
-                      onChange={(e) => setFormData({ ...formData, late_penalty_rate: e.target.value })}
-                      placeholder="1"
-                      className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs"
-                    />
-                  </div>
-                </div>
-
-                {/* ข้อมูลธนาคาร */}
-                <div className="border-t pt-3 space-y-3">
-                  <div className="flex items-center space-x-1.5 text-gray-800 font-bold text-xs">
-                    <CreditCard size={15} className="text-emerald-600" />
-                    <span>ข้อมูลบัญชีรับเงิน</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="font-bold text-gray-700 block mb-1">ธนาคาร</label>
-                      <select
-                        value={formData.bank_name}
-                        onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
-                        className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs"
-                      >
-                        <option value="กสิกรไทย">กสิกรไทย (KBANK)</option>
-                        <option value="ไทยพาณิชย์">ไทยพาณิชย์ (SCB)</option>
-                        <option value="กรุงเทพ">กรุงเทพ (BBL)</option>
-                        <option value="กรุงไทย">กรุงไทย (KTB)</option>
-                        <option value="กรุงศรี">กรุงศรี (BAY)</option>
-                        <option value="ออมสิน">ออมสิน (GSB)</option>
-                        <option value="พร้อมเพย์">พร้อมเพย์ (PromptPay)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="font-bold text-gray-700 block mb-1">เลขที่บัญชี / พร้อมเพย์</label>
-                      <input
-                        type="text"
-                        value={formData.bank_account_no}
-                        onChange={(e) => setFormData({ ...formData, bank_account_no: e.target.value })}
-                        className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="font-bold text-gray-700 block mb-1">ชื่อบัญชี</label>
-                    <input
-                      type="text"
-                      value={formData.bank_account_name}
-                      onChange={(e) => setFormData({ ...formData, bank_account_name: e.target.value })}
-                      className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs"
-                    />
-                  </div>
-                </div>
-
-              </form>
-
-              <div className="p-4 bg-gray-50 border-t shrink-0">
-                <button
-                  type="submit"
-                  form="emp-form"
-                  className="w-full py-3.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-lg transition text-sm flex items-center justify-center space-x-1.5 active:scale-[0.98]"
-                >
-                  <Save size={18} />
-                  <span>{editingEmp?.status === 'pending' ? 'ยืนยันอนุมัติพนักงาน' : 'บันทึกข้อมูลพนักงาน'}</span>
-                </button>
               </div>
 
+              <div className="grid grid-cols-2 gap-2.5 bg-emerald-50/70 p-3 rounded-2xl border border-emerald-100">
+                <div>
+                  <label className="font-bold text-emerald-800 block mb-1">ประเภทการจ้าง</label>
+                  <select
+                    value={formData.employment_type}
+                    onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
+                    className="w-full p-2.5 border rounded-xl bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs sm:text-sm"
+                  >
+                    <option value="full_time">ประจำ</option>
+                    <option value="part_time">พาร์ทไทม์</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-bold text-emerald-800 block mb-1">อัตราค่าจ้าง (บาท)</label>
+                  <input
+                    type="number"
+                    value={formData.salary_rate}
+                    onChange={(e) => setFormData({ ...formData, salary_rate: e.target.value })}
+                    placeholder="400"
+                    className="w-full p-2.5 border rounded-xl bg-white font-mono focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-bold"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="font-bold text-gray-700 block mb-1">เวลาเข้างาน (กะ)</label>
+                  <input
+                    type="time"
+                    value={formData.work_start}
+                    onChange={(e) => setFormData({ ...formData, work_start: e.target.value })}
+                    className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-gray-700 block mb-1">เวลาออกงาน (กะ)</label>
+                  <input
+                    type="time"
+                    value={formData.work_end}
+                    onChange={(e) => setFormData({ ...formData, work_end: e.target.value })}
+                    className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="font-bold text-gray-700 block mb-1">วันหยุดประจำสัปดาห์</label>
+                  <select
+                    value={formData.off_day}
+                    onChange={(e) => setFormData({ ...formData, off_day: e.target.value })}
+                    className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs sm:text-sm"
+                  >
+                    <option value="ไม่มีวันหยุด">ไม่มีวันหยุด</option>
+                    <option value="จันทร์">จันทร์</option>
+                    <option value="อังคาร">อังคาร</option>
+                    <option value="พุธ">พุธ</option>
+                    <option value="พฤหัสบดี">พฤหัสบดี</option>
+                    <option value="ศุกร์">ศุกร์</option>
+                    <option value="เสาร์">เสาร์</option>
+                    <option value="อาทิตย์">อาทิตย์</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="font-bold text-gray-700 block mb-1">หักมาสาย (บาท/นาที)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={formData.late_penalty_rate}
+                    onChange={(e) => setFormData({ ...formData, late_penalty_rate: e.target.value })}
+                    placeholder="1"
+                    className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* ข้อมูลธนาคาร */}
+              <div className="border-t pt-3 space-y-3">
+                <div className="flex items-center space-x-1.5 text-gray-800 font-bold text-xs sm:text-sm">
+                  <CreditCard size={15} className="text-emerald-600" />
+                  <span>ข้อมูลบัญชีรับเงิน</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="font-bold text-gray-700 block mb-1">ธนาคาร</label>
+                    <select
+                      value={formData.bank_name}
+                      onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
+                      className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs sm:text-sm"
+                    >
+                      <option value="กสิกรไทย">กสิกรไทย (KBANK)</option>
+                      <option value="ไทยพาณิชย์">ไทยพาณิชย์ (SCB)</option>
+                      <option value="กรุงเทพ">กรุงเทพ (BBL)</option>
+                      <option value="กรุงไทย">กรุงไทย (KTB)</option>
+                      <option value="กรุงศรี">กรุงศรี (BAY)</option>
+                      <option value="ออมสิน">ออมสิน (GSB)</option>
+                      <option value="พร้อมเพย์">พร้อมเพย์ (PromptPay)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-gray-700 block mb-1">เลขที่บัญชี / พร้อมเพย์</label>
+                    <input
+                      type="text"
+                      value={formData.bank_account_no}
+                      onChange={(e) => setFormData({ ...formData, bank_account_no: e.target.value })}
+                      className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="font-bold text-gray-700 block mb-1">ชื่อบัญชี</label>
+                  <input
+                    type="text"
+                    value={formData.bank_account_name}
+                    onChange={(e) => setFormData({ ...formData, bank_account_name: e.target.value })}
+                    className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
+                  />
+                </div>
+              </div>
+
+            </form>
+
+            <div className="p-4 bg-gray-50 border-t shrink-0">
+              <button
+                type="submit"
+                form="emp-form"
+                className="w-full py-3.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-lg transition text-xs sm:text-sm flex items-center justify-center space-x-1.5 active:scale-[0.98] cursor-pointer"
+              >
+                <Save size={18} />
+                <span>{editingEmp?.status === 'pending' ? 'ยืนยันอนุมัติพนักงาน' : 'บันทึกข้อมูลพนักงาน'}</span>
+              </button>
             </div>
+
           </div>
-        )}
-
-        {/* Bottom Navigation Bar */}
-        <div className="absolute bottom-3 left-4 right-4 bg-white/90 backdrop-blur-md rounded-[28px] shadow-lg border border-gray-100 p-1.5 flex justify-around items-center z-30">
-          <button
-            onClick={() => onTabChange ? onTabChange('home') : onBack()}
-            className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600"
-          >
-            <Home size={20} className="text-gray-400" />
-            <span className="text-[10px] mt-0.5">หน้าแรก</span>
-          </button>
-
-          <button
-            className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition bg-emerald-50 text-[#15803d] font-bold"
-          >
-            <Users size={20} className="text-[#15803d]" />
-            <span className="text-[10px] mt-0.5">พนักงาน</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange ? onTabChange('payroll') : onBack()}
-            className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600"
-          >
-            <Calculator size={20} className="text-gray-400" />
-            <span className="text-[10px] mt-0.5">เงินเดือน</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange ? onTabChange('settings') : onBack()}
-            className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600"
-          >
-            <Settings size={20} className="text-gray-400" />
-            <span className="text-[10px] mt-0.5">ตั้งค่า</span>
-          </button>
         </div>
+      )}
 
+      {/* Bottom Navigation Bar จัดกลางตามทุกขนาดหน้าจอ */}
+      <div className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md bg-white/95 backdrop-blur-md rounded-[28px] shadow-xl border border-gray-100 p-1.5 flex justify-around items-center z-30">
+        <button
+          onClick={() => onTabChange ? onTabChange('home') : onBack()}
+          className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <Home size={20} className="text-gray-400" />
+          <span className="text-[10px] mt-0.5">หน้าแรก</span>
+        </button>
+
+        <button
+          className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition bg-emerald-50 text-[#15803d] font-bold cursor-pointer"
+        >
+          <Users size={20} className="text-[#15803d]" />
+          <span className="text-[10px] mt-0.5">พนักงาน</span>
+        </button>
+
+        <button
+          onClick={() => onTabChange ? onTabChange('payroll') : onBack()}
+          className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <Calculator size={20} className="text-gray-400" />
+          <span className="text-[10px] mt-0.5">เงินเดือน</span>
+        </button>
+
+        <button
+          onClick={() => onTabChange ? onTabChange('settings') : onBack()}
+          className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <Settings size={20} className="text-gray-400" />
+          <span className="text-[10px] mt-0.5">ตั้งค่า</span>
+        </button>
       </div>
+
     </div>
   );
 }

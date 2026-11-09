@@ -118,25 +118,24 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
   });
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center items-start p-0 sm:p-4">
-      {/* กรอบมือถือล็อคขนาดคงที่ */}
-      <div className="w-full max-w-sm bg-gray-50 h-screen sm:h-[720px] sm:rounded-[36px] shadow-2xl overflow-hidden border border-gray-100 flex flex-col relative">
+    <div className="min-h-screen w-full bg-gray-50 flex flex-col relative overflow-x-hidden">
+      
+      {/* ส่วนเนื้อหาหลัก สามารถ Scroll ได้ */}
+      <div className="flex-1 pb-24 w-full">
         
-        {/* ส่วนเนื้อหาภายในที่สามารถ Scroll ได้ */}
-        <div className="flex-1 overflow-y-auto pb-24">
-          
-          {/* Header สีเขียวทรงโค้ง */}
-          <div className="bg-[#15803d] p-5 text-white rounded-b-[32px] shadow-md sticky top-0 z-20">
-            <div className="flex items-center space-x-3 mb-3">
+        {/* Header สีเขียวทรงโค้ง ขยายเต็มความกว้าง */}
+        <div className="bg-[#15803d] p-5 sm:p-6 text-white rounded-b-[32px] sm:rounded-b-[40px] shadow-md sticky top-0 z-20 w-full">
+          <div className="max-w-3xl mx-auto space-y-3">
+            <div className="flex items-center space-x-3">
               <button
                 onClick={onBack}
-                className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition backdrop-blur-sm"
+                className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition backdrop-blur-sm cursor-pointer"
               >
                 <ArrowLeft size={20} />
               </button>
               <div>
-                <h1 className="font-extrabold text-base leading-tight">รายละเอียดการลงเวลาวันนี้</h1>
-                <p className="text-[11px] text-emerald-100 font-light">
+                <h1 className="font-extrabold text-base sm:text-lg leading-tight">รายละเอียดการลงเวลาวันนี้</h1>
+                <p className="text-[11px] sm:text-xs text-emerald-100 font-light">
                   {todayStr} • {selectedBranch?.shop_name || 'สาขาหลัก'}
                 </p>
               </div>
@@ -144,81 +143,85 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
 
             {/* ช่องค้นหาพนักงาน */}
             <div className="relative">
-              <Search size={15} className="absolute left-3.5 top-3 text-emerald-300" />
+              <Search size={16} className="absolute left-3.5 top-3 text-emerald-300 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="ค้นหาชื่อพนักงาน..."
-                className="w-full pl-10 pr-4 py-2.5 bg-white/10 text-white placeholder-emerald-200/70 rounded-xl text-xs focus:outline-none focus:bg-white/20 border border-white/10 transition"
+                className="w-full pl-10 pr-4 py-2.5 bg-white/10 text-white placeholder-emerald-200/70 rounded-xl text-xs sm:text-sm focus:outline-none focus:bg-white/20 border border-white/10 transition"
               />
             </div>
           </div>
+        </div>
+
+        {/* คอนเทนเนอร์หลักตรงกลาง */}
+        <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-4">
 
           {/* Filter Bar 4 หมวด */}
-          <div className="p-4 pb-2">
-            <div className="grid grid-cols-4 gap-1 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm text-center">
-              <button
-                onClick={() => setFilterStatus('all')}
-                className={`py-2 px-1 rounded-xl text-[10px] font-bold transition ${
-                  filterStatus === 'all'
-                    ? 'bg-emerald-50 text-[#15803d] border border-emerald-200/60'
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                ทั้งหมด ({employees.length})
-              </button>
+          <div className="grid grid-cols-4 gap-1.5 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm text-center">
+            <button
+              onClick={() => setFilterStatus('all')}
+              className={`py-2 px-1.5 rounded-xl text-[10px] sm:text-xs font-bold transition cursor-pointer ${
+                filterStatus === 'all'
+                  ? 'bg-emerald-50 text-[#15803d] border border-emerald-200/60'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              ทั้งหมด ({employees.length})
+            </button>
 
-              <button
-                onClick={() => setFilterStatus('present')}
-                className={`py-2 px-1 rounded-xl text-[10px] font-bold transition ${
-                  filterStatus === 'present'
-                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300/60'
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                ปกติ ({presentCount})
-              </button>
+            <button
+              onClick={() => setFilterStatus('present')}
+              className={`py-2 px-1.5 rounded-xl text-[10px] sm:text-xs font-bold transition cursor-pointer ${
+                filterStatus === 'present'
+                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300/60'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              ปกติ ({presentCount})
+            </button>
 
-              <button
-                onClick={() => setFilterStatus('late')}
-                className={`py-2 px-1 rounded-xl text-[10px] font-bold transition ${
-                  filterStatus === 'late'
-                    ? 'bg-orange-100 text-orange-800 border border-orange-300/60'
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                สาย ({lateCount})
-              </button>
+            <button
+              onClick={() => setFilterStatus('late')}
+              className={`py-2 px-1.5 rounded-xl text-[10px] sm:text-xs font-bold transition cursor-pointer ${
+                filterStatus === 'late'
+                  ? 'bg-orange-100 text-orange-800 border border-orange-300/60'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              สาย ({lateCount})
+            </button>
 
-              <button
-                onClick={() => setFilterStatus('absent')}
-                className={`py-2 px-1 rounded-xl text-[10px] font-bold transition ${
-                  filterStatus === 'absent'
-                    ? 'bg-gray-200 text-gray-700 border border-gray-300/60'
-                    : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                ยังไม่เข้า ({absentCount})
-              </button>
-            </div>
+            <button
+              onClick={() => setFilterStatus('absent')}
+              className={`py-2 px-1.5 rounded-xl text-[10px] sm:text-xs font-bold transition cursor-pointer ${
+                filterStatus === 'absent'
+                  ? 'bg-gray-200 text-gray-700 border border-gray-300/60'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              ยังไม่เข้า ({absentCount})
+            </button>
           </div>
 
           {/* รายชื่อพนักงานและการลงเวลา */}
-          <div className="p-4 space-y-3 pt-1">
+          <div className="space-y-3 pt-1">
             {loading ? (
-              <div className="text-center py-10 text-xs text-gray-400">กำลังโหลดข้อมูลการลงเวลา...</div>
+              <div className="text-center py-12 text-xs sm:text-sm text-gray-400">กำลังโหลดข้อมูลการลงเวลา...</div>
             ) : filteredEmployees.length === 0 ? (
-              <div className="text-center py-12 text-xs text-gray-400">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</div>
+              <div className="text-center py-16 text-xs sm:text-sm text-gray-400 bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
+                ไม่พบข้อมูลตามเงื่อนไขที่เลือก
+              </div>
             ) : (
               filteredEmployees.map((emp) => (
                 <div
                   key={emp.id}
-                  className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-2.5 relative overflow-hidden"
+                  className="bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-gray-100 space-y-3 relative overflow-hidden"
                 >
                   <div className="flex justify-between items-start">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-11 h-11 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center font-bold text-base border overflow-hidden shrink-0">
+                    <div className="flex items-center space-x-3.5">
+                      <div className="w-11 h-11 sm:w-13 sm:h-13 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center font-bold text-base sm:text-lg border overflow-hidden shrink-0">
                         {emp.avatar_url ? (
                           <img src={emp.avatar_url} alt={emp.name} className="w-full h-full object-cover" />
                         ) : (
@@ -227,45 +230,45 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
                       </div>
 
                       <div>
-                        <h3 className="font-bold text-gray-800 text-sm">{emp.name}</h3>
-                        <p className="text-[10px] text-gray-400">
-                          {emp.position || 'พนักงาน'} • กะ {emp.work_start || '16:00'} - {emp.work_end || '00:00'}
+                        <h3 className="font-bold text-gray-800 text-sm sm:text-base">{emp.name}</h3>
+                        <p className="text-[10px] sm:text-xs text-gray-400">
+                          {emp.position || 'พนักงาน'} • กะ {emp.work_start || '16:00'} - {emp.work_end || '00:00'} น.
                         </p>
                       </div>
                     </div>
 
                     {/* Badge สถานะ */}
                     {emp.attendanceStatus === 'present' && (
-                      <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 font-bold text-[10px] rounded-xl border border-emerald-200/70 flex items-center space-x-1">
-                        <CheckCircle2 size={12} />
+                      <span className="px-3 py-1 bg-emerald-50 text-emerald-700 font-bold text-[10px] sm:text-xs rounded-xl border border-emerald-200/70 flex items-center space-x-1">
+                        <CheckCircle2 size={13} />
                         <span>ตรงเวลา</span>
                       </span>
                     )}
                     {emp.attendanceStatus === 'late' && (
-                      <span className="px-2.5 py-1 bg-orange-50 text-orange-700 font-bold text-[10px] rounded-xl border border-orange-200/70 flex items-center space-x-1">
-                        <Clock size={12} />
+                      <span className="px-3 py-1 bg-orange-50 text-orange-700 font-bold text-[10px] sm:text-xs rounded-xl border border-orange-200/70 flex items-center space-x-1">
+                        <Clock size={13} />
                         <span>สาย {emp.lateMinutes} นาที</span>
                       </span>
                     )}
                     {emp.attendanceStatus === 'absent' && (
-                      <span className="px-2.5 py-1 bg-gray-100 text-gray-500 font-bold text-[10px] rounded-xl border border-gray-200 flex items-center space-x-1">
-                        <UserX size={12} />
+                      <span className="px-3 py-1 bg-gray-100 text-gray-500 font-bold text-[10px] sm:text-xs rounded-xl border border-gray-200 flex items-center space-x-1">
+                        <UserX size={13} />
                         <span>ยังไม่ลงเวลา</span>
                       </span>
                     )}
                   </div>
 
                   {/* เวลาลงเวลา เข้า/ออก */}
-                  <div className="bg-gray-50 p-2.5 rounded-2xl border border-gray-100 grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 grid grid-cols-2 gap-2 text-xs sm:text-sm">
                     <div className="flex flex-col">
-                      <span className="text-[10px] text-gray-400 font-medium">เวลาเข้างาน</span>
+                      <span className="text-[10px] sm:text-xs text-gray-400 font-medium">เวลาเข้างาน</span>
                       <span className={`font-bold font-mono ${emp.checkInTime ? 'text-gray-800' : 'text-gray-300'}`}>
                         {formatTime(emp.checkInTime)}
                       </span>
                     </div>
 
-                    <div className="flex flex-col border-l border-gray-200 pl-3">
-                      <span className="text-[10px] text-gray-400 font-medium">เวลาออกงาน</span>
+                    <div className="flex flex-col border-l border-gray-200 pl-4">
+                      <span className="text-[10px] sm:text-xs text-gray-400 font-medium">เวลาออกงาน</span>
                       <span className={`font-bold font-mono ${emp.checkOutTime ? 'text-gray-800' : 'text-gray-300'}`}>
                         {formatTime(emp.checkOutTime)}
                       </span>
@@ -276,43 +279,43 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
             )}
           </div>
         </div>
-
-        {/* ==================== BOTTOM NAVIGATION BAR ==================== */}
-        <div className="absolute bottom-3 left-4 right-4 bg-white/90 backdrop-blur-md rounded-[28px] shadow-lg border border-gray-100 p-1.5 flex justify-around items-center z-30">
-          <button
-            onClick={() => onTabChange ? onTabChange('home') : onBack()}
-            className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition bg-emerald-50 text-[#15803d] font-bold"
-          >
-            <Home size={20} className="text-[#15803d]" />
-            <span className="text-[10px] mt-0.5">หน้าแรก</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange ? onTabChange('employees') : onBack()}
-            className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600"
-          >
-            <Users size={20} className="text-gray-400" />
-            <span className="text-[10px] mt-0.5">พนักงาน</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange ? onTabChange('payroll') : onBack()}
-            className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600"
-          >
-            <Calculator size={20} className="text-gray-400" />
-            <span className="text-[10px] mt-0.5">เงินเดือน</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange ? onTabChange('settings') : onBack()}
-            className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600"
-          >
-            <Settings size={20} className="text-gray-400" />
-            <span className="text-[10px] mt-0.5">ตั้งค่า</span>
-          </button>
-        </div>
-
       </div>
+
+      {/* BOTTOM NAVIGATION BAR จัดกลางตามทุกขนาดหน้าจอ */}
+      <div className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md bg-white/95 backdrop-blur-md rounded-[28px] shadow-xl border border-gray-100 p-1.5 flex justify-around items-center z-30">
+        <button
+          onClick={() => onTabChange ? onTabChange('home') : onBack()}
+          className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition bg-emerald-50 text-[#15803d] font-bold cursor-pointer"
+        >
+          <Home size={20} className="text-[#15803d]" />
+          <span className="text-[10px] mt-0.5">หน้าแรก</span>
+        </button>
+
+        <button
+          onClick={() => onTabChange ? onTabChange('employees') : onBack()}
+          className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <Users size={20} className="text-gray-400" />
+          <span className="text-[10px] mt-0.5">พนักงาน</span>
+        </button>
+
+        <button
+          onClick={() => onTabChange ? onTabChange('payroll') : onBack()}
+          className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <Calculator size={20} className="text-gray-400" />
+          <span className="text-[10px] mt-0.5">เงินเดือน</span>
+        </button>
+
+        <button
+          onClick={() => onTabChange ? onTabChange('settings') : onBack()}
+          className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <Settings size={20} className="text-gray-400" />
+          <span className="text-[10px] mt-0.5">ตั้งค่า</span>
+        </button>
+      </div>
+
     </div>
   );
 }

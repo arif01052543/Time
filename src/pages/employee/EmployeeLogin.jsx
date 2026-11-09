@@ -46,42 +46,49 @@ export default function EmployeeLogin({ onLoginSuccess, onSwitchToAdmin }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center items-start sm:items-center p-0 sm:p-4">
-      <div className="w-full max-w-sm bg-white h-screen sm:h-auto sm:min-h-[640px] sm:rounded-[36px] shadow-2xl overflow-y-auto border-0 sm:border border-gray-100 flex flex-col justify-between">
+    <div className="min-h-screen w-full bg-gray-50 flex flex-col justify-between overflow-x-hidden">
+      
+      {/* Header สีเขียวทรงโค้ง ขยายเต็มความกว้าง */}
+      <div className="bg-[#15803d] pt-8 pb-12 px-6 text-center text-white relative rounded-b-[40px] sm:rounded-b-[56px] shadow-md w-full">
         
-        {/* Header สีเขียวทรงโค้ง */}
-        <div className="bg-[#15803d] pt-8 pb-10 px-6 text-center text-white relative rounded-b-[40px] shadow-md shrink-0">
-          <button
-            type="button"
-            onClick={onSwitchToAdmin}
-            className="absolute top-5 right-5 bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-full flex items-center space-x-1 backdrop-blur-sm transition font-medium active:scale-95"
-          >
-            <Store size={14} />
-            <span>เจ้าของร้าน</span>
-          </button>
+        {/* ย้ายปุ่มออกมาไว้นอก max-w-md เพื่อให้อ้างอิงขอบขวาของหน้าจอหลัก */}
+        <button
+          type="button"
+          onClick={onSwitchToAdmin}
+          className="absolute top-4 right-4 sm:top-5 sm:right-6 bg-white/20 hover:bg-white/30 text-white text-xs px-3.5 py-1.5 rounded-full flex items-center space-x-1.5 backdrop-blur-sm transition font-medium active:scale-95 cursor-pointer z-10"
+        >
+          <Store size={15} />
+          <span>เจ้าของร้าน</span>
+        </button>
 
-          <div className="w-20 h-20 bg-white text-[#15803d] rounded-full flex items-center justify-center mx-auto mb-3 shadow-md mt-2">
-            <Clock size={44} strokeWidth={2.5} />
+        <div className="max-w-md mx-auto">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white text-[#15803d] rounded-full flex items-center justify-center mx-auto mb-3.5 shadow-md mt-2">
+            <Clock size={44} strokeWidth={2.5} className="sm:w-14 sm:h-14" />
           </div>
 
-          <h1 className="text-2xl font-black tracking-wider">TIME TRACK</h1>
-          <p className="text-xs text-emerald-100 mt-1 font-light">ระบบลงเวลาเข้า-ออกงาน</p>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-wider">TIME TRACK</h1>
+          <p className="text-xs sm:text-sm text-emerald-100 mt-1 font-light">ระบบลงเวลาเข้า-ออกงาน</p>
 
-          <div className="inline-flex items-center space-x-1.5 mt-3 px-4 py-1.5 bg-white/20 rounded-full text-xs font-medium backdrop-blur-sm">
+          <div className="inline-flex items-center space-x-1.5 mt-3.5 px-4 py-1.5 bg-white/20 rounded-full text-xs font-medium backdrop-blur-sm">
             <Shield size={14} />
             <span>สำหรับพนักงาน</span>
           </div>
         </div>
+      </div>
 
-        {/* ฟอร์มเข้าสู่ระบบ */}
-        <div className="px-6 py-6 flex-1 flex flex-col justify-center">
-          <h2 className="text-center font-bold text-gray-800 text-xl">เข้าสู่ระบบ</h2>
-          <p className="text-center text-xs text-gray-400 mt-1 mb-5">
-            พนักงานกรอกเลขบัตรประชาชน 4 ตัวท้าย
-          </p>
+      {/* ฟอร์มเข้าสู่ระบบจัดกึ่งกลางหน้าจอ */}
+      <div className="flex-1 max-w-md mx-auto w-full px-4 sm:px-6 py-8 flex flex-col justify-center">
+        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100 space-y-6">
+          
+          <div className="text-center space-y-1">
+            <h2 className="font-bold text-gray-800 text-xl sm:text-2xl">เข้าสู่ระบบ</h2>
+            <p className="text-xs sm:text-sm text-gray-400">
+              พนักงานกรอกเลขบัตรประชาชน 4 ตัวท้าย
+            </p>
+          </div>
 
           {errorMsg && (
-            <div className="mb-4 p-3.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-2xl text-center font-semibold flex items-center justify-center space-x-1.5">
+            <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs sm:text-sm rounded-2xl text-center font-semibold flex items-center justify-center space-x-1.5">
               <AlertCircle size={16} className="shrink-0 text-amber-600" />
               <span>{errorMsg}</span>
             </div>
@@ -95,7 +102,7 @@ export default function EmployeeLogin({ onLoginSuccess, onSwitchToAdmin }) {
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
                 placeholder="• • • •"
-                className="w-full text-center tracking-[1em] text-2xl py-4 px-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-emerald-600 focus:bg-white transition font-bold text-gray-700"
+                className="w-full text-center tracking-[1em] text-2xl sm:text-3xl py-4 px-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-emerald-600 focus:bg-white transition font-bold text-gray-700"
                 required
               />
             </div>
@@ -103,33 +110,37 @@ export default function EmployeeLogin({ onLoginSuccess, onSwitchToAdmin }) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-lg shadow-emerald-700/20 flex items-center justify-center space-x-2 transition active:scale-[0.98] disabled:bg-gray-400"
+              className="w-full py-4 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-lg shadow-emerald-700/20 flex items-center justify-center space-x-2 transition active:scale-[0.98] disabled:bg-gray-400 cursor-pointer"
             >
               <span className="text-base">{loading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}</span>
               <LogIn size={18} />
             </button>
           </form>
-        </div>
 
-        {/* ปุ่มสมัครพนักงานใหม่ด้านล่าง */}
-        <div className="p-6 pt-0 shrink-0">
-          <div className="relative flex py-2 items-center">
-            <div className="flex-grow border-t border-gray-100"></div>
-            <span className="flex-shrink mx-4 text-[11px] text-gray-400">พนักงานใหม่?</span>
-            <div className="flex-grow border-t border-gray-100"></div>
+          {/* ปุ่มสมัครพนักงานใหม่ */}
+          <div className="pt-2">
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-gray-100"></div>
+              <span className="flex-shrink mx-4 text-xs text-gray-400">พนักงานใหม่?</span>
+              <div className="flex-grow border-t border-gray-100"></div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowRegister(true)}
+              className="w-full py-3 bg-emerald-50 hover:bg-emerald-100 text-[#15803d] font-semibold rounded-2xl border border-emerald-200/60 flex items-center justify-center space-x-2 text-xs sm:text-sm transition mt-2 active:scale-95 cursor-pointer"
+            >
+              <UserPlus size={16} />
+              <span>ลงทะเบียนที่นี่</span>
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowRegister(true)}
-            className="w-full py-3 bg-emerald-50 hover:bg-emerald-100 text-[#15803d] font-semibold rounded-2xl border border-emerald-200/60 flex items-center justify-center space-x-2 text-xs transition mt-2 active:scale-95"
-          >
-            <UserPlus size={16} />
-            <span>ลงทะเบียนที่นี่</span>
-          </button>
         </div>
-
       </div>
+
+      {/* Footer เว้นระยะด้านล่าง */}
+      <div className="py-4 text-center text-xs text-gray-400"></div>
+
     </div>
   );
 }

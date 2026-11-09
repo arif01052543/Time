@@ -47,7 +47,7 @@ export default function AdminDashboard({ currentUser, selectedBranch, onLogout }
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedBranch, activeTab, subView]); // 🟢 เพิ่ม activeTab และ subView เพื่อดึงข้อมูลใหม่ทุกครั้งที่สลับหน้ากลับมา
+  }, [selectedBranch, activeTab, subView]);
 
   const fetchDashboardStats = async () => {
     try {
@@ -186,188 +186,189 @@ export default function AdminDashboard({ currentUser, selectedBranch, onLogout }
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center items-start p-0 sm:p-4">
-      <div className="w-full max-w-sm bg-gray-50 h-screen sm:h-[720px] sm:rounded-[36px] shadow-2xl overflow-hidden border border-gray-100 flex flex-col relative">
+    <div className="min-h-screen w-full bg-gray-50 flex flex-col relative overflow-x-hidden">
+      
+      {/* Scrollable Main Content Area */}
+      <div className="flex-1 pb-24 w-full">
         
-        <div className="flex-1 overflow-y-auto pb-24">
-          
-          {/* Header สีเขียวทรงโค้ง */}
-          <div className="bg-[#15803d] p-5 text-white rounded-b-[32px] shadow-md sticky top-0 z-20">
+        {/* Header สีเขียวทรงโค้ง ขยายเต็มหน้าจอ */}
+        <div className="bg-[#15803d] p-5 sm:p-6 text-white rounded-b-[32px] sm:rounded-b-[40px] shadow-md sticky top-0 z-20 w-full">
+          <div className="max-w-3xl mx-auto">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-                  <Store size={22} className="text-white" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm shrink-0">
+                  <Store size={22} className="text-white sm:w-6 sm:h-6" />
                 </div>
                 <div>
-                  <h1 className="font-extrabold text-base leading-tight">{shopName}</h1>
-                  <p className="text-[11px] text-emerald-100 font-light">ยินดีต้อนรับ</p>
+                  <h1 className="font-extrabold text-base sm:text-lg leading-tight">{shopName}</h1>
+                  <p className="text-[11px] sm:text-xs text-emerald-100 font-light">ยินดีต้อนรับ</p>
                 </div>
               </div>
 
               <button
                 onClick={onLogout}
-                className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition backdrop-blur-sm"
+                className="w-10 h-10 sm:w-11 sm:h-11 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition backdrop-blur-sm cursor-pointer"
               >
                 <LogOut size={18} />
               </button>
             </div>
 
-            <div className="bg-[#0e5c2b]/80 backdrop-blur-md rounded-2xl p-3 flex justify-between items-center text-xs">
+            <div className="bg-[#0e5c2b]/80 backdrop-blur-md rounded-2xl p-3 flex justify-between items-center text-xs sm:text-sm">
               <span className="font-medium text-emerald-100">วันที่: {formattedDate}</span>
-              <span className="bg-white text-[#15803d] font-bold px-3 py-1 rounded-full text-[11px]">
+              <span className="bg-white text-[#15803d] font-bold px-3 py-1 rounded-full text-[11px] sm:text-xs">
                 พนักงานที่มา {stats.presentToday}/{stats.totalEmployees}
               </span>
             </div>
           </div>
+        </div>
 
-          {/* TAB 1: หน้าแรก (Dashboard) */}
-          {activeTab === 'home' && (
-            <div className="p-5 space-y-5">
-              
-              {/* การ์ดสรุปยอด 2 บล็อก */}
-              <div className="grid grid-cols-2 gap-3.5">
-                <button
-                  onClick={() => handleOpenAttendance('present')}
-                  className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center hover:bg-emerald-50/50 hover:border-emerald-200 transition group active:scale-95"
-                >
-                  <div className="w-11 h-11 bg-emerald-100/70 text-emerald-600 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition">
-                    <CheckCircle2 size={22} strokeWidth={2.5} />
-                  </div>
-                  <span className="text-2xl font-black text-gray-800">{stats.presentToday}</span>
-                  <span className="text-[11px] text-gray-400 group-hover:text-emerald-700 font-medium mt-0.5">
-                    มาทำงานวันนี้
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => handleOpenAttendance('late')}
-                  className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center hover:bg-orange-50/50 hover:border-orange-200 transition group active:scale-95"
-                >
-                  <div className="w-11 h-11 bg-orange-100/80 text-orange-600 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition">
-                    <Clock size={22} strokeWidth={2.5} />
-                  </div>
-                  <span className="text-2xl font-black text-gray-800">{stats.lateToday}</span>
-                  <span className="text-[11px] text-gray-400 group-hover:text-orange-700 font-medium mt-0.5">
-                    มาสายวันนี้
-                  </span>
-                </button>
-              </div>
-
-              {/* รายการรอการตรวจสอบ */}
-              <div>
-                <h2 className="font-bold text-gray-800 text-sm mb-3">รายการรอการตรวจสอบ</h2>
-                
-                <div className="space-y-2.5">
-                  <button
-                    onClick={() => setSubView('advances')}
-                    className="w-full bg-white p-3.5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:bg-emerald-50/50 transition group"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-emerald-100/70 text-emerald-600 rounded-2xl flex items-center justify-center">
-                        <Banknote size={20} />
-                      </div>
-                      <div className="text-left">
-                        <h3 className="font-bold text-gray-800 text-xs group-hover:text-emerald-800">
-                          ขอเบิกเงินล่วงหน้า
-                        </h3>
-                        <p className="text-[10px] text-gray-400">ตรวจสอบและโอนเงิน</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      {stats.pendingAdvances > 0 && (
-                        <span className="bg-red-500 text-white text-[11px] font-black px-2 py-0.5 rounded-full shadow-sm animate-pulse">
-                          {stats.pendingAdvances}
-                        </span>
-                      )}
-                      <ChevronRight size={18} className="text-gray-300 group-hover:text-emerald-600 transition" />
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => setSubView('leaves')}
-                    className="w-full bg-white p-3.5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:bg-purple-50/50 transition group"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-purple-100/70 text-purple-600 rounded-2xl flex items-center justify-center">
-                        <Calendar size={20} />
-                      </div>
-                      <div className="text-left">
-                        <h3 className="font-bold text-gray-800 text-xs group-hover:text-purple-800">
-                          คำขอลางาน
-                        </h3>
-                        <p className="text-[10px] text-gray-400">อนุมัติการลาพนักงาน</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      {stats.pendingLeaves > 0 && (
-                        <span className="bg-red-500 text-white text-[11px] font-black px-2 py-0.5 rounded-full shadow-sm animate-pulse">
-                          {stats.pendingLeaves}
-                        </span>
-                      )}
-                      <ChevronRight size={18} className="text-gray-300 group-hover:text-purple-600 transition" />
-                    </div>
-                  </button>
+        {/* TAB 1: หน้าแรก (Dashboard Content) */}
+        {activeTab === 'home' && (
+          <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-5">
+            
+            {/* การ์ดสรุปยอด 2 บล็อก */}
+            <div className="grid grid-cols-2 gap-3.5 sm:gap-5">
+              <button
+                onClick={() => handleOpenAttendance('present')}
+                className="bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center hover:bg-emerald-50/50 hover:border-emerald-200 transition group active:scale-95 cursor-pointer"
+              >
+                <div className="w-11 h-11 sm:w-14 sm:h-14 bg-emerald-100/70 text-emerald-600 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition">
+                  <CheckCircle2 size={24} strokeWidth={2.5} className="sm:w-7 sm:h-7" />
                 </div>
-              </div>
+                <span className="text-2xl sm:text-3xl font-black text-gray-800">{stats.presentToday}</span>
+                <span className="text-[11px] sm:text-xs text-gray-400 group-hover:text-emerald-700 font-medium mt-0.5">
+                  มาทำงานวันนี้
+                </span>
+              </button>
 
+              <button
+                onClick={() => handleOpenAttendance('late')}
+                className="bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center hover:bg-orange-50/50 hover:border-orange-200 transition group active:scale-95 cursor-pointer"
+              >
+                <div className="w-11 h-11 sm:w-14 sm:h-14 bg-orange-100/80 text-orange-600 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition">
+                  <Clock size={24} strokeWidth={2.5} className="sm:w-7 sm:h-7" />
+                </div>
+                <span className="text-2xl sm:text-3xl font-black text-gray-800">{stats.lateToday}</span>
+                <span className="text-[11px] sm:text-xs text-gray-400 group-hover:text-orange-700 font-medium mt-0.5">
+                  มาสายวันนี้
+                </span>
+              </button>
             </div>
-          )}
-        </div>
 
-        {/* Bottom Navigation Bar */}
-        <div className="absolute bottom-3 left-4 right-4 bg-white/90 backdrop-blur-md rounded-[28px] shadow-lg border border-gray-100 p-1.5 flex justify-around items-center z-30">
-          <button
-            onClick={() => handleNavigateTab('home')}
-            className={`flex flex-col items-center py-1.5 px-3 rounded-2xl transition ${
-              activeTab === 'home' && !subView
-                ? 'bg-emerald-50 text-[#15803d] font-bold'
-                : 'text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            <Home size={20} className={activeTab === 'home' && !subView ? 'text-[#15803d]' : 'text-gray-400'} />
-            <span className="text-[10px] mt-0.5">หน้าแรก</span>
-          </button>
+            {/* รายการรอการตรวจสอบ */}
+            <div>
+              <h2 className="font-bold text-gray-800 text-sm sm:text-base mb-3">รายการรอการตรวจสอบ</h2>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={() => setSubView('advances')}
+                  className="w-full bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:bg-emerald-50/50 transition group cursor-pointer"
+                >
+                  <div className="flex items-center space-x-3.5">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-100/70 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0">
+                      <Banknote size={22} />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-bold text-gray-800 text-xs sm:text-sm group-hover:text-emerald-800">
+                        ขอเบิกเงินล่วงหน้า
+                      </h3>
+                      <p className="text-[10px] sm:text-xs text-gray-400">ตรวจสอบและโอนเงิน</p>
+                    </div>
+                  </div>
 
-          <button
-            onClick={() => handleNavigateTab('employees')}
-            className={`flex flex-col items-center py-1.5 px-3 rounded-2xl transition ${
-              activeTab === 'employees'
-                ? 'bg-emerald-50 text-[#15803d] font-bold'
-                : 'text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            <Users size={20} className={activeTab === 'employees' ? 'text-[#15803d]' : 'text-gray-400'} />
-            <span className="text-[10px] mt-0.5">พนักงาน</span>
-          </button>
+                  <div className="flex items-center space-x-2">
+                    {stats.pendingAdvances > 0 && (
+                      <span className="bg-red-500 text-white text-[11px] sm:text-xs font-black px-2.5 py-0.5 rounded-full shadow-sm animate-pulse">
+                        {stats.pendingAdvances}
+                      </span>
+                    )}
+                    <ChevronRight size={18} className="text-gray-300 group-hover:text-emerald-600 transition" />
+                  </div>
+                </button>
 
-          <button
-            onClick={() => handleNavigateTab('payroll')}
-            className={`flex flex-col items-center py-1.5 px-3 rounded-2xl transition ${
-              activeTab === 'payroll'
-                ? 'bg-[#15803d] text-white font-bold'
-                : 'text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            <Calculator size={20} className={activeTab === 'payroll' ? 'text-white' : 'text-gray-400'} />
-            <span className="text-[10px] mt-0.5">เงินเดือน</span>
-          </button>
+                <button
+                  onClick={() => setSubView('leaves')}
+                  className="w-full bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:bg-purple-50/50 transition group cursor-pointer"
+                >
+                  <div className="flex items-center space-x-3.5">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100/70 text-purple-600 rounded-2xl flex items-center justify-center shrink-0">
+                      <Calendar size={22} />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-bold text-gray-800 text-xs sm:text-sm group-hover:text-purple-800">
+                        คำขอลางาน
+                      </h3>
+                      <p className="text-[10px] sm:text-xs text-gray-400">อนุมัติการลาพนักงาน</p>
+                    </div>
+                  </div>
 
-          <button
-            onClick={() => handleNavigateTab('settings')}
-            className={`flex flex-col items-center py-1.5 px-3 rounded-2xl transition ${
-              activeTab === 'settings'
-                ? 'bg-emerald-50 text-[#15803d font-bold'
-                : 'text-gray-400 hover:text-gray-600'
-            }`}
-          >
-            <Settings size={20} className={activeTab === 'settings' ? 'text-[#15803d]' : 'text-gray-400'} />
-            <span className="text-[10px] mt-0.5">ตั้งค่า</span>
-          </button>
-        </div>
+                  <div className="flex items-center space-x-2">
+                    {stats.pendingLeaves > 0 && (
+                      <span className="bg-red-500 text-white text-[11px] sm:text-xs font-black px-2.5 py-0.5 rounded-full shadow-sm animate-pulse">
+                        {stats.pendingLeaves}
+                      </span>
+                    )}
+                    <ChevronRight size={18} className="text-gray-300 group-hover:text-purple-600 transition" />
+                  </div>
+                </button>
+              </div>
+            </div>
 
+          </div>
+        )}
       </div>
+
+      {/* Bottom Navigation Bar จัดกลาง ปรับตามทุกขนาดหน้าจอ */}
+      <div className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md bg-white/95 backdrop-blur-md rounded-[28px] shadow-xl border border-gray-100 p-1.5 flex justify-around items-center z-30">
+        <button
+          onClick={() => handleNavigateTab('home')}
+          className={`flex flex-col items-center py-1.5 px-3 rounded-2xl transition cursor-pointer ${
+            activeTab === 'home' && !subView
+              ? 'bg-emerald-50 text-[#15803d] font-bold'
+              : 'text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          <Home size={20} className={activeTab === 'home' && !subView ? 'text-[#15803d]' : 'text-gray-400'} />
+          <span className="text-[10px] mt-0.5">หน้าแรก</span>
+        </button>
+
+        <button
+          onClick={() => handleNavigateTab('employees')}
+          className={`flex flex-col items-center py-1.5 px-3 rounded-2xl transition cursor-pointer ${
+            activeTab === 'employees'
+              ? 'bg-emerald-50 text-[#15803d] font-bold'
+              : 'text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          <Users size={20} className={activeTab === 'employees' ? 'text-[#15803d]' : 'text-gray-400'} />
+          <span className="text-[10px] mt-0.5">พนักงาน</span>
+        </button>
+
+        <button
+          onClick={() => handleNavigateTab('payroll')}
+          className={`flex flex-col items-center py-1.5 px-3 rounded-2xl transition cursor-pointer ${
+            activeTab === 'payroll'
+              ? 'bg-[#15803d] text-white font-bold'
+              : 'text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          <Calculator size={20} className={activeTab === 'payroll' ? 'text-white' : 'text-gray-400'} />
+          <span className="text-[10px] mt-0.5">เงินเดือน</span>
+        </button>
+
+        <button
+          onClick={() => handleNavigateTab('settings')}
+          className={`flex flex-col items-center py-1.5 px-3 rounded-2xl transition cursor-pointer ${
+            activeTab === 'settings'
+              ? 'bg-emerald-50 text-[#15803d] font-bold'
+              : 'text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          <Settings size={20} className={activeTab === 'settings' ? 'text-[#15803d]' : 'text-gray-400'} />
+          <span className="text-[10px] mt-0.5">ตั้งค่า</span>
+        </button>
+      </div>
+
     </div>
   );
 }

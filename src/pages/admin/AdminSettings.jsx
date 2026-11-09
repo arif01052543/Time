@@ -208,347 +208,345 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
   const mapEmbedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${Number(longitude) - 0.003}%2C${Number(latitude) - 0.003}%2C${Number(longitude) + 0.003}%2C${Number(latitude) + 0.003}&layer=mapnik&marker=${latitude}%2C${longitude}`;
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center items-start p-0 sm:p-4">
-      <div className="w-full max-w-sm bg-gray-50 h-screen sm:h-[720px] sm:rounded-[36px] shadow-2xl overflow-hidden border border-gray-100 flex flex-col relative">
+    <div className="min-h-screen w-full bg-gray-50 flex flex-col relative overflow-x-hidden">
+      
+      {/* ส่วนเนื้อหาหลัก สามารถ Scroll ได้ */}
+      <div className="flex-1 pb-24 w-full">
         
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto pb-24">
-          
-          {/* Header สีเขียวทรงโค้ง */}
-          <div className="bg-[#15803d] p-5 text-white rounded-b-[32px] shadow-md sticky top-0 z-20">
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={onBack}
-                className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition backdrop-blur-sm"
-              >
-                <ArrowLeft size={20} />
-              </button>
-              <div>
-                <h1 className="font-extrabold text-base leading-tight">ตั้งค่าระบบ</h1>
-                <p className="text-[11px] text-emerald-100 font-light">
-                  จัดการข้อมูลร้าน เวลา บัญชีและสิทธิ์เข้าใช้
-                </p>
-              </div>
+        {/* Header สีเขียวทรงโค้ง ขยายเต็มความกว้าง */}
+        <div className="bg-[#15803d] p-5 sm:p-6 text-white rounded-b-[32px] sm:rounded-b-[40px] shadow-md sticky top-0 z-20 w-full">
+          <div className="max-w-3xl mx-auto flex items-center space-x-3">
+            <button
+              onClick={onBack}
+              className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition backdrop-blur-sm cursor-pointer"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <div>
+              <h1 className="font-extrabold text-base sm:text-lg leading-tight">ตั้งค่าระบบ</h1>
+              <p className="text-[11px] sm:text-xs text-emerald-100 font-light">
+                จัดการข้อมูลร้าน เวลา บัญชีและสิทธิ์เข้าใช้
+              </p>
             </div>
           </div>
+        </div>
+
+        {/* คอนเทนเนอร์หลักตรงกลาง */}
+        <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
 
           {/* แจ้งเตือนเมื่อบันทึกการตั้งค่าร้านสำเร็จ */}
           {successToast && (
-            <div className="m-4 mb-0 p-3.5 bg-emerald-100 border border-emerald-300 text-[#15803d] rounded-2xl text-xs font-bold flex items-center space-x-2 shadow-sm animate-in fade-in zoom-in duration-200">
+            <div className="p-3.5 bg-emerald-100 border border-emerald-300 text-[#15803d] rounded-2xl text-xs sm:text-sm font-bold flex items-center space-x-2 shadow-sm animate-in fade-in zoom-in duration-200">
               <CheckCircle2 size={18} />
               <span>บันทึกข้อมูลการตั้งค่าร้านเรียบร้อยแล้ว</span>
             </div>
           )}
 
-          {/* เนื้อหาฟอร์มตั้งค่า */}
-          <div className="p-4 space-y-4">
-            
-            {/* CARD 1: ข้อมูลสาขา */}
-            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3 overflow-hidden box-border">
-              <div className="flex items-center space-x-2.5 text-gray-800 font-extrabold text-sm border-b border-gray-50 pb-2.5">
-                <div className="w-8 h-8 bg-emerald-100/70 text-[#15803d] rounded-xl flex items-center justify-center shrink-0">
-                  <Store size={18} />
-                </div>
-                <span>ข้อมูลร้าน</span>
+          {/* CARD 1: ข้อมูลสาขา */}
+          <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-gray-100 space-y-3.5 overflow-hidden box-border">
+            <div className="flex items-center space-x-2.5 text-gray-800 font-extrabold text-sm sm:text-base border-b border-gray-50 pb-2.5">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-emerald-100/70 text-[#15803d] rounded-xl flex items-center justify-center shrink-0">
+                <Store size={18} />
+              </div>
+              <span>ข้อมูลร้าน</span>
+            </div>
+
+            <div className="w-full min-w-0">
+              <label className="text-xs sm:text-sm font-bold text-gray-700 block mb-1.5">ชื่อร้าน / สาขา</label>
+              <input
+                type="text"
+                value={shopName}
+                onChange={(e) => setShopName(e.target.value)}
+                placeholder="เช่น ร้านตัวอย่าง สาขา1"
+                className="w-full min-w-0 max-w-full box-border block p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-medium"
+              />
+            </div>
+          </div>
+
+          {/* CARD 2: เวลาทำงานและวันหยุดตั้งต้นของร้าน */}
+          <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-gray-100 space-y-3.5 overflow-hidden box-border">
+            <div className="flex items-center space-x-2.5 text-gray-800 font-extrabold text-sm sm:text-base border-b border-gray-50 pb-2.5">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-purple-100/70 text-purple-600 rounded-xl flex items-center justify-center shrink-0">
+                <Clock size={18} />
+              </div>
+              <span className="truncate">เวลาทำงานและวันหยุดตั้งต้นของร้าน</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full min-w-0">
+              <div className="w-full min-w-0 max-w-full">
+                <label className="text-xs font-bold text-gray-700 block mb-1 text-left sm:text-center">เวลาเข้างานมาตรฐาน</label>
+                <input
+                  type="time"
+                  value={workStart}
+                  onChange={(e) => setWorkStart(e.target.value)}
+                  className="w-full max-w-full min-w-0 box-border block p-2.5 sm:p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-mono font-bold text-gray-800 text-center appearance-none [-webkit-appearance:none] [&::-webkit-date-and-time-value]:text-center [&::-webkit-date-and-time-value]:m-0"
+                />
               </div>
 
-              <div className="w-full min-w-0">
-                <label className="text-xs font-bold text-gray-700 block mb-1.5">ชื่อร้าน / สาขา</label>
+              <div className="w-full min-w-0 max-w-full">
+                <label className="text-xs font-bold text-gray-700 block mb-1 text-left sm:text-center">เวลาออกงานมาตรฐาน</label>
                 <input
-                  type="text"
-                  value={shopName}
-                  onChange={(e) => setShopName(e.target.value)}
-                  placeholder="เช่น ร้านตัวอย่าง สาขา1"
-                  className="w-full min-w-0 max-w-full box-border block p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-medium"
+                  type="time"
+                  value={workEnd}
+                  onChange={(e) => setWorkEnd(e.target.value)}
+                  className="w-full max-w-full min-w-0 box-border block p-2.5 sm:p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-mono font-bold text-gray-800 text-center appearance-none [-webkit-appearance:none] [&::-webkit-date-and-time-value]:text-center [&::-webkit-date-and-time-value]:m-0"
                 />
               </div>
             </div>
 
-            {/* CARD 2: เวลาทำงานและวันหยุดตั้งต้นของร้าน (แก้ปัญหา iOS time input ล้นขอบ) */}
-            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3.5 overflow-hidden box-border">
-              <div className="flex items-center space-x-2.5 text-gray-800 font-extrabold text-sm border-b border-gray-50 pb-2.5">
-                <div className="w-8 h-8 bg-purple-100/70 text-purple-600 rounded-xl flex items-center justify-center shrink-0">
-                  <Clock size={18} />
-                </div>
-                <span className="truncate">เวลาทำงานและวันหยุดตั้งต้นของร้าน</span>
-              </div>
+            <div className="w-full min-w-0">
+              <label className="text-xs sm:text-sm font-bold text-gray-700 block mb-1.5">วันหยุดประจำร้าน (ค่าตั้งต้น)</label>
+              <select
+                value={offDay}
+                onChange={(e) => setOffDay(e.target.value)}
+                className="w-full max-w-full min-w-0 box-border block p-2.5 sm:p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-medium text-gray-800 cursor-pointer"
+              >
+                <option value="ไม่มีวันหยุด">ไม่มีวันหยุด</option>
+                <option value="วันจันทร์">วันจันทร์</option>
+                <option value="วันอังคาร">วันอังคาร</option>
+                <option value="วันพุธ">วันพุธ</option>
+                <option value="วันพฤหัสบดี">วันพฤหัสบดี</option>
+                <option value="วันศุกร์">วันศุกร์</option>
+                <option value="วันเสาร์">วันเสาร์</option>
+                <option value="วันอาทิตย์">วันอาทิตย์</option>
+              </select>
+            </div>
+          </div>
 
-              <div className="w-full min-w-0 space-y-3">
-                <div className="w-full min-w-0 max-w-full">
-                  <label className="text-[11px] font-bold text-gray-700 block mb-1 text-center">เวลาเข้างานมาตรฐาน</label>
-                  <input
-                    type="time"
-                    value={workStart}
-                    onChange={(e) => setWorkStart(e.target.value)}
-                    className="w-full max-w-full min-w-0 box-border block p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold text-gray-800 text-center appearance-none [-webkit-appearance:none] [&::-webkit-date-and-time-value]:text-center [&::-webkit-date-and-time-value]:m-0"
-                  />
+          {/* CARD 3: พิกัดลงเวลา (GPS) */}
+          <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-gray-100 space-y-3.5 overflow-hidden box-border">
+            <div className="flex justify-between items-center border-b border-gray-50 pb-2.5">
+              <div className="flex items-center space-x-2.5 text-gray-800 font-extrabold text-sm sm:text-base">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 bg-emerald-100/70 text-[#15803d] rounded-xl flex items-center justify-center shrink-0">
+                  <MapPin size={18} />
                 </div>
-
-                <div className="w-full min-w-0 max-w-full">
-                  <label className="text-[11px] font-bold text-gray-700 block mb-1 text-center">เวลาออกงานมาตรฐาน</label>
-                  <input
-                    type="time"
-                    value={workEnd}
-                    onChange={(e) => setWorkEnd(e.target.value)}
-                    className="w-full max-w-full min-w-0 box-border block p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold text-gray-800 text-center appearance-none [-webkit-appearance:none] [&::-webkit-date-and-time-value]:text-center [&::-webkit-date-and-time-value]:m-0"
-                  />
-                </div>
-              </div>
-
-              <div className="w-full min-w-0">
-                <label className="text-[11px] font-bold text-gray-700 block mb-1">วันหยุดประจำร้าน (ค่าตั้งต้น)</label>
-                <select
-                  value={offDay}
-                  onChange={(e) => setOffDay(e.target.value)}
-                  className="w-full max-w-full min-w-0 box-border block p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-medium text-gray-800"
-                >
-                  <option value="ไม่มีวันหยุด">ไม่มีวันหยุด</option>
-                  <option value="วันจันทร์">วันจันทร์</option>
-                  <option value="วันอังคาร">วันอังคาร</option>
-                  <option value="วันพุธ">วันพุธ</option>
-                  <option value="วันพฤหัสบดี">วันพฤหัสบดี</option>
-                  <option value="วันศุกร์">วันศุกร์</option>
-                  <option value="วันเสาร์">วันเสาร์</option>
-                  <option value="วันอาทิตย์">วันอาทิตย์</option>
-                </select>
+                <span>พิกัดลงเวลา (GPS)</span>
               </div>
             </div>
 
-            {/* CARD 3: พิกัดลงเวลา (GPS) */}
-            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3.5 overflow-hidden box-border">
-              <div className="flex justify-between items-center border-b border-gray-50 pb-2.5">
-                <div className="flex items-center space-x-2.5 text-gray-800 font-extrabold text-sm">
-                  <div className="w-8 h-8 bg-emerald-100/70 text-[#15803d] rounded-xl flex items-center justify-center shrink-0">
-                    <MapPin size={18} />
-                  </div>
-                  <span>พิกัดลงเวลา (GPS)</span>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <button
-                  type="button"
-                  onClick={handleResetLocation}
-                  className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl text-xs flex items-center space-x-1 transition"
-                >
-                  <RotateCcw size={13} />
-                  <span>ล้างพิกัด</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleGetCurrentLocation}
-                  className="py-2 px-3 bg-emerald-50 hover:bg-emerald-100 text-[#15803d] font-bold rounded-xl text-xs flex items-center space-x-1 transition border border-emerald-200/60"
-                >
-                  <Locate size={14} />
-                  <span>ดึงพิกัดปัจจุบัน</span>
-                </button>
-              </div>
-
-              <form onSubmit={handleSearchLocation} className="flex space-x-2">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="พิมพ์ชื่อสถานที่, ถนน หรืออำเภอ..."
-                  className="w-full min-w-0 max-w-full box-border block p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs"
-                />
-                <button
-                  type="submit"
-                  className="px-4 py-2.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-xl text-xs flex items-center space-x-1 shrink-0 transition shadow-sm"
-                >
-                  <Search size={14} />
-                  <span>ค้นหา</span>
-                </button>
-              </form>
-
-              <div className="relative rounded-2xl overflow-hidden border border-gray-200 h-44 bg-gray-100">
-                <iframe
-                  title="Shop GPS Map"
-                  width="100%"
-                  height="100%"
-                  frameBorder="0"
-                  scrolling="no"
-                  src={mapEmbedUrl}
-                />
-                <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-[10px] font-medium text-gray-600 shadow-sm border border-gray-100 pointer-events-none">
-                  ⓘ คลิกบนแผนที่หรือลากหมุดเพื่อตั้งจุดร้าน
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="min-w-0 max-w-full">
-                  <label className="text-[11px] font-bold text-gray-600 block mb-1">ละติจูด (Latitude)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={latitude}
-                    onChange={(e) => setLatitude(e.target.value)}
-                    placeholder="6.8202259"
-                    className="w-full min-w-0 max-w-full box-border block p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-mono text-xs"
-                  />
-                </div>
-
-                <div className="min-w-0 max-w-full">
-                  <label className="text-[11px] font-bold text-gray-600 block mb-1">ลองจิจูด (Longitude)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={longitude}
-                    onChange={(e) => setLongitude(e.target.value)}
-                    placeholder="101.2804537"
-                    className="w-full min-w-0 max-w-full box-border block p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-mono text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="w-full min-w-0">
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-[11px] font-bold text-gray-700">ระยะทางที่อนุญาตให้ลงเวลาได้ (เมตร)</label>
-                  <span className="text-[10px] font-bold text-emerald-600">แนะนำ: 50 - 150 เมตร</span>
-                </div>
-                <input
-                  type="number"
-                  value={radiusMeters}
-                  onChange={(e) => setRadiusMeters(e.target.value)}
-                  placeholder="100"
-                  className="w-full min-w-0 max-w-full box-border block p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold"
-                />
-              </div>
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={handleResetLocation}
+                className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl text-xs sm:text-sm flex items-center space-x-1 transition cursor-pointer"
+              >
+                <RotateCcw size={14} />
+                <span>ล้างพิกัด</span>
+              </button>
 
               <button
                 type="button"
-                onClick={handleSaveSettings}
-                disabled={saving}
-                className="w-full py-3.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-lg transition text-xs flex items-center justify-center space-x-2 active:scale-[0.98] disabled:bg-gray-400"
+                onClick={handleGetCurrentLocation}
+                className="py-2 px-3 bg-emerald-50 hover:bg-emerald-100 text-[#15803d] font-bold rounded-xl text-xs sm:text-sm flex items-center space-x-1 transition border border-emerald-200/60 cursor-pointer"
               >
-                <Save size={18} />
-                <span>{saving ? 'กำลังบันทึกตั้งค่าร้าน...' : 'บันทึกตั้งค่าสาขา & GPS'}</span>
+                <Locate size={15} />
+                <span>ดึงพิกัดปัจจุบัน</span>
               </button>
             </div>
 
-            {/* CARD 4: เปลี่ยนชื่อผู้ใช้งาน & รหัสผ่านแอดมิน */}
-            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-3.5 overflow-hidden box-border">
-              <div className="flex items-center space-x-2.5 text-gray-800 font-extrabold text-sm border-b border-gray-50 pb-2.5">
-                <div className="w-8 h-8 bg-blue-100/80 text-blue-700 rounded-xl flex items-center justify-center shrink-0">
-                  <ShieldCheck size={18} />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-gray-800 text-sm">บัญชีผู้ดูแลระบบ & ความปลอดภัย</h3>
-                  <p className="text-[10px] text-gray-400 font-normal">แก้ไขชื่อผู้ใช้งานและรหัสผ่านเข้าสู่ระบบแอดมิน</p>
+            <form onSubmit={handleSearchLocation} className="flex space-x-2">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="พิมพ์ชื่อสถานที่, ถนน หรืออำเภอ..."
+                className="w-full min-w-0 max-w-full box-border block p-2.5 sm:p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
+              />
+              <button
+                type="submit"
+                className="px-4 py-2.5 sm:py-3 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center space-x-1 shrink-0 transition shadow-sm cursor-pointer"
+              >
+                <Search size={15} />
+                <span>ค้นหา</span>
+              </button>
+            </form>
+
+            <div className="relative rounded-2xl overflow-hidden border border-gray-200 h-48 sm:h-56 bg-gray-100">
+              <iframe
+                title="Shop GPS Map"
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                scrolling="no"
+                src={mapEmbedUrl}
+              />
+              <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-medium text-gray-600 shadow-sm border border-gray-100 pointer-events-none">
+                ⓘ คลิกบนแผนที่หรือลากหมุดเพื่อตั้งจุดร้าน
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="min-w-0 max-w-full">
+                <label className="text-xs font-bold text-gray-600 block mb-1">ละติจูด (Latitude)</label>
+                <input
+                  type="number"
+                  step="any"
+                  value={latitude}
+                  onChange={(e) => setLatitude(e.target.value)}
+                  placeholder="6.8202259"
+                  className="w-full min-w-0 max-w-full box-border block p-2.5 sm:p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-mono text-xs sm:text-sm"
+                />
+              </div>
+
+              <div className="min-w-0 max-w-full">
+                <label className="text-xs font-bold text-gray-600 block mb-1">ลองจิจูด (Longitude)</label>
+                <input
+                  type="number"
+                  step="any"
+                  value={longitude}
+                  onChange={(e) => setLongitude(e.target.value)}
+                  placeholder="101.2804537"
+                  className="w-full min-w-0 max-w-full box-border block p-2.5 sm:p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-mono text-xs sm:text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="w-full min-w-0">
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs sm:text-sm font-bold text-gray-700">ระยะทางที่อนุญาตให้ลงเวลาได้ (เมตร)</label>
+                <span className="text-[10px] sm:text-xs font-bold text-emerald-600">แนะนำ: 50 - 150 เมตร</span>
+              </div>
+              <input
+                type="number"
+                value={radiusMeters}
+                onChange={(e) => setRadiusMeters(e.target.value)}
+                placeholder="100"
+                className="w-full min-w-0 max-w-full box-border block p-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-mono font-bold"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSaveSettings}
+              disabled={saving}
+              className="w-full py-3.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-lg transition text-xs sm:text-sm flex items-center justify-center space-x-2 active:scale-[0.98] disabled:bg-gray-400 cursor-pointer"
+            >
+              <Save size={18} />
+              <span>{saving ? 'กำลังบันทึกตั้งค่าร้าน...' : 'บันทึกตั้งค่าสาขา & GPS'}</span>
+            </button>
+          </div>
+
+          {/* CARD 4: เปลี่ยนชื่อผู้ใช้งาน & รหัสผ่านแอดมิน */}
+          <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-gray-100 space-y-3.5 overflow-hidden box-border">
+            <div className="flex items-center space-x-2.5 text-gray-800 font-extrabold text-sm sm:text-base border-b border-gray-50 pb-2.5">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-blue-100/80 text-blue-700 rounded-xl flex items-center justify-center shrink-0">
+                <ShieldCheck size={18} />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-gray-800 text-sm sm:text-base">บัญชีผู้ดูแลระบบ & ความปลอดภัย</h3>
+                <p className="text-[10px] sm:text-xs text-gray-400 font-normal">แก้ไขชื่อผู้ใช้งานและรหัสผ่านเข้าสู่ระบบแอดมิน</p>
+              </div>
+            </div>
+
+            {accountError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-xs sm:text-sm font-semibold flex items-center space-x-1.5">
+                <AlertCircle size={16} className="shrink-0" />
+                <span>{accountError}</span>
+              </div>
+            )}
+
+            {accountSuccess && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl text-xs sm:text-sm font-semibold flex items-center space-x-1.5">
+                <CheckCircle2 size={16} className="shrink-0" />
+                <span>{accountSuccess}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveAccountCredentials} className="space-y-3">
+              <div className="w-full min-w-0">
+                <label className="text-xs sm:text-sm font-bold text-gray-700 block mb-1">ชื่อผู้ใช้งานเข้าสู่ระบบ</label>
+                <div className="relative flex items-center">
+                  <User size={17} className="absolute left-3.5 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={adminUsername}
+                    onChange={(e) => setAdminUsername(e.target.value)}
+                    placeholder="เช่น admin หรือ admin_shop1"
+                    className="w-full min-w-0 max-w-full box-border block pl-10 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-semibold text-gray-800"
+                    required
+                  />
                 </div>
               </div>
 
-              {accountError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-xs font-semibold flex items-center space-x-1.5">
-                  <AlertCircle size={15} className="shrink-0" />
-                  <span>{accountError}</span>
+              <div className="w-full min-w-0">
+                <label className="text-xs sm:text-sm font-bold text-gray-700 block mb-1">รหัสผ่านใหม่</label>
+                <div className="relative flex items-center">
+                  <Lock size={17} className="absolute left-3.5 text-gray-400 pointer-events-none" />
+                  <input
+                    type="password"
+                    value={newPin}
+                    onChange={(e) => setNewPin(e.target.value)}
+                    placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยนรหัสผ่าน"
+                    className="w-full min-w-0 max-w-full box-border block pl-10 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-mono font-bold"
+                  />
                 </div>
-              )}
+              </div>
 
-              {accountSuccess && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl text-xs font-semibold flex items-center space-x-1.5">
-                  <CheckCircle2 size={15} className="shrink-0" />
-                  <span>{accountSuccess}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleSaveAccountCredentials} className="space-y-3">
+              {newPin && (
                 <div className="w-full min-w-0">
-                  <label className="text-xs font-bold text-gray-700 block mb-1">ชื่อผู้ใช้งานเข้าสู่ระบบ</label>
+                  <label className="text-xs sm:text-sm font-bold text-gray-700 block mb-1">ยืนยันรหัสผ่านใหม่</label>
                   <div className="relative flex items-center">
-                    <User size={16} className="absolute left-3.5 text-gray-400 pointer-events-none" />
+                    <Key size={17} className="absolute left-3.5 text-gray-400 pointer-events-none" />
                     <input
-                      type="text"
-                      value={adminUsername}
-                      onChange={(e) => setAdminUsername(e.target.value)}
-                      placeholder="เช่น admin หรือ admin_shop1"
-                      className="w-full min-w-0 max-w-full box-border block pl-10 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-semibold text-gray-800"
+                      type="password"
+                      value={confirmPin}
+                      onChange={(e) => setConfirmPin(e.target.value)}
+                      placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง"
+                      className="w-full min-w-0 max-w-full box-border block pl-10 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-mono font-bold"
                       required
                     />
                   </div>
                 </div>
+              )}
 
-                <div className="w-full min-w-0">
-                  <label className="text-xs font-bold text-gray-700 block mb-1">รหัสผ่านใหม่</label>
-                  <div className="relative flex items-center">
-                    <Lock size={16} className="absolute left-3.5 text-gray-400 pointer-events-none" />
-                    <input
-                      type="password"
-                      value={newPin}
-                      onChange={(e) => setNewPin(e.target.value)}
-                      placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยนรหัสผ่าน"
-                      className="w-full min-w-0 max-w-full box-border block pl-10 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold"
-                    />
-                  </div>
-                </div>
-
-                {newPin && (
-                  <div className="w-full min-w-0">
-                    <label className="text-xs font-bold text-gray-700 block mb-1">ยืนยันรหัสผ่านใหม่</label>
-                    <div className="relative flex items-center">
-                      <Key size={16} className="absolute left-3.5 text-gray-400 pointer-events-none" />
-                      <input
-                        type="password"
-                        value={confirmPin}
-                        onChange={(e) => setConfirmPin(e.target.value)}
-                        placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง"
-                        className="w-full min-w-0 max-w-full box-border block pl-10 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs font-mono font-bold"
-                        required
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={savingAccount}
-                  className="w-full py-3 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-md transition text-xs flex items-center justify-center space-x-1.5 active:scale-95 disabled:bg-gray-400 mt-1"
-                >
-                  <Key size={15} />
-                  <span>{savingAccount ? 'กำลังบันทึก...' : 'บันทึกเปลี่ยนรหัสผ่าน / Username'}</span>
-                </button>
-              </form>
-            </div>
-
+              <button
+                type="submit"
+                disabled={savingAccount}
+                className="w-full py-3 sm:py-3.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-md transition text-xs sm:text-sm flex items-center justify-center space-x-1.5 active:scale-95 disabled:bg-gray-400 mt-1 cursor-pointer"
+              >
+                <Key size={16} />
+                <span>{savingAccount ? 'กำลังบันทึก...' : 'บันทึกเปลี่ยนรหัสผ่าน / Username'}</span>
+              </button>
+            </form>
           </div>
+
         </div>
-
-        {/* BOTTOM NAVIGATION BAR */}
-        <div className="absolute bottom-3 left-4 right-4 bg-white/90 backdrop-blur-md rounded-[28px] shadow-lg border border-gray-100 p-1.5 flex justify-around items-center z-30">
-          <button
-            onClick={() => onTabChange ? onTabChange('home') : onBack()}
-            className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600"
-          >
-            <Home size={20} className="text-gray-400" />
-            <span className="text-[10px] mt-0.5">หน้าแรก</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange ? onTabChange('employees') : onBack()}
-            className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600"
-          >
-            <Users size={20} className="text-gray-400" />
-            <span className="text-[10px] mt-0.5">พนักงาน</span>
-          </button>
-
-          <button
-            onClick={() => onTabChange ? onTabChange('payroll') : onBack()}
-            className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600"
-          >
-            <Calculator size={20} className="text-gray-400" />
-            <span className="text-[10px] mt-0.5">เงินเดือน</span>
-          </button>
-
-          <button
-            className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition bg-emerald-50 text-[#15803d] font-bold"
-          >
-            <Settings size={20} className="text-[#15803d]" />
-            <span className="text-[10px] mt-0.5">ตั้งค่า</span>
-          </button>
-        </div>
-
       </div>
+
+      {/* BOTTOM NAVIGATION BAR จัดกลางตามทุกขนาดหน้าจอ */}
+      <div className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md bg-white/95 backdrop-blur-md rounded-[28px] shadow-xl border border-gray-100 p-1.5 flex justify-around items-center z-30">
+        <button
+          onClick={() => onTabChange ? onTabChange('home') : onBack()}
+          className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <Home size={20} className="text-gray-400" />
+          <span className="text-[10px] mt-0.5">หน้าแรก</span>
+        </button>
+
+        <button
+          onClick={() => onTabChange ? onTabChange('employees') : onBack()}
+          className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <Users size={20} className="text-gray-400" />
+          <span className="text-[10px] mt-0.5">พนักงาน</span>
+        </button>
+
+        <button
+          onClick={() => onTabChange ? onTabChange('payroll') : onBack()}
+          className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <Calculator size={20} className="text-gray-400" />
+          <span className="text-[10px] mt-0.5">เงินเดือน</span>
+        </button>
+
+        <button
+          className="flex flex-col items-center py-1.5 px-3 rounded-2xl transition bg-emerald-50 text-[#15803d] font-bold cursor-pointer"
+        >
+          <Settings size={20} className="text-[#15803d]" />
+          <span className="text-[10px] mt-0.5">ตั้งค่า</span>
+        </button>
+      </div>
+
     </div>
   );
 }
