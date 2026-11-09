@@ -104,6 +104,15 @@
   }
 }
 
+/* ป้องกัน iOS Auto-Zoom เมื่อกดช่องพิมพ์ข้อความ */
+@media screen and (max-width: 768px) {
+  input, 
+  select, 
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 #next-steps ul {
   list-style: none;
   padding: 0;
