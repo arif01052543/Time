@@ -95,32 +95,6 @@ p {
   margin: 0;
 }
 
-/* ป้องกัน iOS Auto-Zoom ตอนพิมพ์ข้อความ */
-@media screen and (max-width: 768px) {
-  input, 
-  select, 
-  textarea {
-    font-size: 16px !important;
-  }
-}
-
-/* ป้องกัน Input, Date, Time, Select ดันกรอบล้น/ซ้อนทับกันบนมือถือ */
-input[type="date"],
-input[type="time"],
-select,
-input {
-  min-width: 0 !important;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-/* ปรับระยะและรูปแบบของ Date / Time Picker ให้จัดกึ่งกลางสวยงาม */
-input[type="date"]::-webkit-date-and-time-value,
-input[type="time"]::-webkit-date-and-time-value {
-  text-align: center;
-  min-height: 1.2em;
-}
-
 code,
 .counter {
   font-family: var(--mono);
@@ -134,4 +108,68 @@ code {
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
+}
+
+/* ==========================================
+   แก้ไขปัญหา iOS Auto-Zoom & กล่องล้นขอบขวา (Grid Blowout)
+   ========================================== */
+
+/* 1. ป้องกัน iOS Auto-Zoom เมื่อกดช่องพิมพ์ข้อความ */
+@media screen and (max-width: 768px) {
+  input, 
+  select, 
+  textarea,
+  input[type="text"],
+  input[type="password"],
+  input[type="number"],
+  input[type="date"],
+  input[type="time"] {
+    font-size: 16px !important;
+  }
+}
+
+/* 2. แก้ปัญหากล่อง วันที่ / เวลา / อินพุต ดันล้นขอบการ์ดด้านขวาบน iOS Safari */
+input[type="date"],
+input[type="time"],
+input[type="number"],
+input[type="text"],
+input[type="password"],
+select,
+input {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  display: block !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+}
+
+/* 3. ป้องกัน WebKit Shadow DOM ด้านในของ date/time ดันความกว้างกล่อง */
+input[type="date"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit {
+  display: inline-flex !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+/* 4. ปรับระยะและรูปแบบของ Date / Time Picker บน iOS ให้จัดกึ่งกลางพอดีกล่อง */
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value {
+  text-align: center;
+  min-height: 1.4em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 5. บังคับทุกคอลัมน์ใน Grid ไม่ให้ขยายกว้างเกินพื้นที่การ์ด */
+.grid {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+.grid > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
 }

@@ -600,7 +600,7 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
           <select
             value={leaveForm.leave_type}
             onChange={(e) => setLeaveForm({ ...leaveForm, leave_type: e.target.value })}
-            className="w-full min-w-0 p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs sm:text-sm cursor-pointer"
+            className="w-full min-w-0 block p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs sm:text-sm cursor-pointer box-border"
           >
             <option value="ลากิจ">ลากิจ</option>
             <option value="ลาป่วย">ลาป่วย</option>
@@ -608,25 +608,25 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
           </select>
         </div>
 
-        {/* ปรับเป็น min-w-0 และซ่อนข้อความล้นด้วย truncate */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-3">
-          <div className="min-w-0">
+        {/* ปรับกริดให้ล็อกความกว้าง 100% ไม่ดันล้นกรอบ */}
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full box-border">
+          <div className="min-w-0 overflow-hidden">
             <label className="font-bold text-gray-700 block mb-1 truncate text-[11px] sm:text-xs">ตั้งแต่วันที่</label>
             <input
               type="date"
               value={leaveForm.start_date}
               onChange={(e) => setLeaveForm({ ...leaveForm, start_date: e.target.value })}
-              className="w-full min-w-0 px-2 py-2 sm:p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-[11px] sm:text-xs font-medium text-center"
+              className="w-full min-w-0 block px-2 py-2 sm:p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-[11px] sm:text-xs font-medium text-center box-border"
               required
             />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 overflow-hidden">
             <label className="font-bold text-gray-700 block mb-1 truncate text-[11px] sm:text-xs">ถึงวันที่</label>
             <input
               type="date"
               value={leaveForm.end_date}
               onChange={(e) => setLeaveForm({ ...leaveForm, end_date: e.target.value })}
-              className="w-full min-w-0 px-2 py-2 sm:p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-[11px] sm:text-xs font-medium text-center"
+              className="w-full min-w-0 block px-2 py-2 sm:p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-[11px] sm:text-xs font-medium text-center box-border"
               required
             />
           </div>
@@ -639,7 +639,7 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
             value={leaveForm.reason}
             onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
             placeholder="ระบุเหตุผลการลากิจ / ลาป่วย..."
-            className="w-full min-w-0 p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
+            className="w-full min-w-0 block p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm box-border"
             required
           />
         </div>

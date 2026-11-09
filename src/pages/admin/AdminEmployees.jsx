@@ -422,54 +422,54 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
         </div>
 
         {/* ประเภทการจ้าง & อัตราค่าจ้าง (กรอบสีเขียว) */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-2.5 bg-emerald-50/70 p-3 rounded-2xl border border-emerald-100">
-          <div className="min-w-0">
-            <label className="font-bold text-emerald-800 block mb-1 truncate text-xs sm:text-sm">ประเภทการจ้าง</label>
-            <select
-              value={formData.employment_type}
-              onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
-              className="w-full min-w-0 p-2.5 border rounded-xl bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs sm:text-sm cursor-pointer"
-            >
-              <option value="full_time">ประจำ</option>
-              <option value="part_time">พาร์ทไทม์</option>
-            </select>
-          </div>
-          <div className="min-w-0">
-            <label className="font-bold text-emerald-800 block mb-1 truncate text-xs sm:text-sm">อัตราค่าจ้าง (บาท)</label>
-            <input
-              type="number"
-              value={formData.salary_rate}
-              onChange={(e) => setFormData({ ...formData, salary_rate: e.target.value })}
-              placeholder="400"
-              className="w-full min-w-0 p-2.5 border rounded-xl bg-white font-mono focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-bold"
-              required
-            />
-          </div>
-        </div>
+<div className="grid grid-cols-2 gap-2 bg-emerald-50/70 p-3 rounded-2xl border border-emerald-100 w-full box-border">
+  <div className="min-w-0 overflow-hidden">
+    <label className="font-bold text-emerald-800 block mb-1 truncate text-xs">ประเภทการจ้าง</label>
+    <select
+      value={formData.employment_type}
+      onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
+      className="w-full min-w-0 block px-2 py-2 border rounded-xl bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs cursor-pointer box-border"
+    >
+      <option value="full_time">ประจำ</option>
+      <option value="part_time">พาร์ทไทม์</option>
+    </select>
+  </div>
+  <div className="min-w-0 overflow-hidden">
+    <label className="font-bold text-emerald-800 block mb-1 truncate text-xs">อัตราค่าจ้าง (บาท)</label>
+    <input
+      type="number"
+      value={formData.salary_rate}
+      onChange={(e) => setFormData({ ...formData, salary_rate: e.target.value })}
+      placeholder="400"
+      className="w-full min-w-0 block px-2 py-2 border rounded-xl bg-white font-mono focus:outline-none focus:border-emerald-600 text-xs font-bold box-border"
+      required
+    />
+  </div>
+</div>
 
-        {/* เวลาเข้างาน & เวลาออกงาน */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
-          <div className="min-w-0">
-            <label className="font-bold text-gray-700 block mb-1 truncate text-xs sm:text-sm">เวลาเข้างาน (กะ)</label>
-            <input
-              type="time"
-              value={formData.work_start}
-              onChange={(e) => setFormData({ ...formData, work_start: e.target.value })}
-              className="w-full min-w-0 p-2 sm:p-2.5 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
-              required
-            />
-          </div>
-          <div className="min-w-0">
-            <label className="font-bold text-gray-700 block mb-1 truncate text-xs sm:text-sm">เวลาออกงาน (กะ)</label>
-            <input
-              type="time"
-              value={formData.work_end}
-              onChange={(e) => setFormData({ ...formData, work_end: e.target.value })}
-              className="w-full min-w-0 p-2 sm:p-2.5 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
-              required
-            />
-          </div>
-        </div>
+{/* เวลาเข้างาน & เวลาออกงาน */}
+<div className="grid grid-cols-2 gap-2 w-full">
+  <div className="min-w-0 overflow-hidden">
+    <label className="font-bold text-gray-700 block mb-1 truncate text-xs">เวลาเข้างาน (กะ)</label>
+    <input
+      type="time"
+      value={formData.work_start}
+      onChange={(e) => setFormData({ ...formData, work_start: e.target.value })}
+      className="w-full min-w-0 block px-2 py-2 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 text-xs box-border"
+      required
+    />
+  </div>
+  <div className="min-w-0 overflow-hidden">
+    <label className="font-bold text-gray-700 block mb-1 truncate text-xs">เวลาออกงาน (กะ)</label>
+    <input
+      type="time"
+      value={formData.work_end}
+      onChange={(e) => setFormData({ ...formData, work_end: e.target.value })}
+      className="w-full min-w-0 block px-2 py-2 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 text-xs box-border"
+      required
+    />
+  </div>
+</div>
 
         {/* วันหยุดประจำสัปดาห์ & หักมาสาย */}
         <div className="grid grid-cols-2 gap-2 sm:gap-2.5">

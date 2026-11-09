@@ -3,9 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <!-- เพิ่ม maximum-scale=1.0 และ user-scalable=no ป้องกัน iOS ซูมเข้าอัตโนมัติ -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    
     <title>time-app</title>
   </head>
   <body>
@@ -13,5 +11,50 @@
     <script type="module" src="/src/main.jsx"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="apple-touch-icon" href="/icon-192.png" />
+
+    <!-- CSS บังคับแก้ไข iOS Auto-Zoom และ Input ดันกรอบล้นแบบหายขาด -->
+    <style>
+      /* 1. บังคับ font-size บนมือถือไม่ให้เล็กกว่า 16px (iOS จะไม่ซูมเข้าเด็ดขาด) */
+      @media screen and (max-width: 768px) {
+        input, 
+        select, 
+        textarea,
+        input[type="text"],
+        input[type="password"],
+        input[type="number"],
+        input[type="date"],
+        input[type="time"] {
+          font-size: 16px !important;
+        }
+      }
+
+      /* 2. ล้างสไตล์ iOS Native Date/Time/Input ไม่ให้ขยายดันกรอบล้นหรือซ้อนทับกัน */
+      input[type="date"],
+      input[type="time"],
+      select,
+      input {
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        appearance: none !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+
+      /* 3. จัดวางข้อความภายใน Date/Time Picker บน iOS ให้อยู่กึ่งกลางพอดีกล่อง */
+      input[type="date"]::-webkit-date-and-time-value,
+      input[type="time"]::-webkit-date-and-time-value {
+        text-align: center;
+        min-height: 1.4em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* 4. บังคับกล่องใน Grid ทุกตัวไม่ให้ดันล้นออกนอกคอลัมน์ */
+      .grid > div {
+        min-width: 0 !important;
+      }
+    </style>
   </body>
 </html>
