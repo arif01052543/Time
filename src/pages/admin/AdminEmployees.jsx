@@ -363,25 +363,32 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
 
       <form id="emp-form" onSubmit={handleSave} className="p-4 sm:p-5 overflow-y-auto space-y-3.5 text-xs sm:text-sm flex-1">
         
-        {/* รูปโปรไฟล์ */}
-        <div>
-          <label className="font-bold text-gray-700 block mb-1">รูปโปรไฟล์</label>
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gray-100 rounded-full border flex items-center justify-center overflow-hidden shrink-0">
-              {formData.avatar_url ? (
-                <img src={formData.avatar_url} alt="Avatar Preview" className="w-full h-full object-cover" />
-              ) : (
-                <Image size={20} className="text-gray-400" />
-              )}
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFileUpload(e, 'avatar_url')}
-              className="text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer w-full min-w-0"
-            />
-          </div>
-        </div>
+        {/* รูปโปรไฟล์ (แก้ไขการแสดงผลให้เหมือนกันทุกอุปกรณ์) */}
+<div className="min-w-0">
+  <label className="font-bold text-gray-700 block mb-1.5 text-xs sm:text-sm">รูปโปรไฟล์</label>
+  <div className="flex items-center space-x-3 bg-gray-50 p-2.5 rounded-2xl border border-dashed border-gray-300 w-full box-border">
+    {/* แสดงรูปตัวอย่าง */}
+    <div className="w-12 h-12 rounded-full border-2 border-emerald-500 overflow-hidden bg-white shrink-0 shadow-sm flex items-center justify-center">
+      {formData.avatar_url ? (
+        <img src={formData.avatar_url} alt="Avatar Preview" className="w-full h-full object-cover" />
+      ) : (
+        <Image size={20} className="text-gray-400" />
+      )}
+    </div>
+
+    {/* ปุ่มเปลี่ยนรูปภาพสไตล์แอป แสดงผลเหมือนกันทุกอุปกรณ์ */}
+    <label className="cursor-pointer bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[#15803d] px-3.5 py-2 rounded-xl font-bold text-xs flex items-center space-x-1.5 transition active:scale-95 shrink-0 shadow-sm">
+      <Upload size={14} className="text-[#15803d] shrink-0" />
+      <span>เลือกไฟล์รูปภาพ</span>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => handleFileUpload(e, 'avatar_url')}
+        style={{ display: 'none' }}
+      />
+    </label>
+  </div>
+</div>
 
         {/* ชื่อ - นามสกุล */}
         <div>
