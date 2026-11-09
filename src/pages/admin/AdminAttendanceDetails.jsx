@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabaseClient';
 import { 
   ArrowLeft, CheckCircle2, Clock, 
-  UserX, Search,
+  UserX, Search, Calendar, Coffee,
   Home, Users, Calculator, Settings 
 } from 'lucide-react';
 
 export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabChange, initialFilter = 'all' }) {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState(initialFilter); // 'all', 'present', 'late', 'absent'
+  const [filterStatus, setFilterStatus] = useState(initialFilter); // 'all', 'present', 'late', 'on_leave', 'absent'
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -22,15 +22,23 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
       const shopId = selectedBranch?.id;
       
       // 1. ดึงข้อมูลพนักงานทั้งหมดในสาขา
-      let empQuery = supabase.from('users').select('*').eq('role', 'employee');
+      let empQuery = supabase.from('users').select('*, shops(*)').eq('role', 'employee');
       if (shopId) empQuery = empQuery.eq('shop_id', shopId);
       const { data: empList, error: empErr } = await empQuery;
       if (empErr) throw empErr;
 
-      // 2. ดึงการลงเวลาวันนี้ (เริ่มตั้งแต่ 00:00:00)
+      // 2. ช่วงเวลาของวันนี้ (00:00:00 - 23:59:59)
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
 
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+
+      // คำนวณวันภาษาไทยของวันนี้ (เช่น 'จันทร์', 'อังคาร')
+      const thaiDays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+      const todayThaiDay = thaiDays[new Date().getDay()];
+
+      // 3. ดึงการลงเวลาวันนี้
       let timeQuery = supabase
         .from('time_entries')
         .select('*')
@@ -39,14 +47,30 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
       const { data: timeEntries, error: timeErr } = await timeQuery;
       if (timeErr) throw timeErr;
 
-      // 3. รวมข้อมูลพนักงานกับการลงเวลา
+      // 4. ดึงข้อมูลวันลาที่ได้รับการอนุมัติวันนี้
+      let leaveQuery = supabase
+        .from('leaves')
+        .select('*')
+        .eq('status', 'approved')
+        .lte('start_date', endOfDay.toISOString())
+        .gte('end_date', startOfDay.toISOString());
+
+      const { data: leaveEntries } = await leaveQuery;
+
+      // 5. รวมข้อมูลพนักงาน การลงเวลา วันลา และวันหยุดประจำสัปดาห์
       const combined = (empList || []).map(emp => {
         const entry = (timeEntries || []).find(e => e.user_id === emp.id);
-        
-        let attendanceStatus = 'absent'; // 'present', 'late', 'absent'
+        const approvedLeave = (leaveEntries || []).find(l => l.user_id === emp.id);
+
+        // เช็กวันหยุดประจำสัปดาห์ของพนักงาน
+        const userOffDay = emp.off_day || emp.shops?.default_off_day || '';
+        const isWeeklyOffDay = userOffDay && userOffDay !== 'ไม่มีวันหยุด' && userOffDay.includes(todayThaiDay);
+
+        let attendanceStatus = 'absent'; // 'present', 'late', 'on_leave', 'absent'
         let checkInTime = null;
         let checkOutTime = null;
         let lateMinutes = 0;
+        let leaveReason = null;
 
         if (entry) {
           checkInTime = entry.created_at || entry.check_in;
@@ -71,11 +95,22 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
           } else {
             attendanceStatus = entry.status === 'late' ? 'late' : 'present';
           }
+        } else if (approvedLeave) {
+          // มีใบลาที่อนุมัติแล้ว
+          attendanceStatus = 'on_leave';
+          leaveReason = approvedLeave.reason || approvedLeave.leave_type || 'ลาหยุด';
+        } else if (isWeeklyOffDay) {
+          // เป็นวันหยุดประจำสัปดาห์
+          attendanceStatus = 'on_leave';
+          leaveReason = 'วันหยุดประจำสัปดาห์';
         }
 
         return {
           ...emp,
           entry,
+          approvedLeave,
+          leaveReason,
+          isWeeklyOffDay,
           attendanceStatus,
           checkInTime,
           checkOutTime,
@@ -93,6 +128,7 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
 
   const presentCount = employees.filter(e => e.attendanceStatus === 'present').length;
   const lateCount = employees.filter(e => e.attendanceStatus === 'late').length;
+  const leaveCount = employees.filter(e => e.attendanceStatus === 'on_leave').length;
   const absentCount = employees.filter(e => e.attendanceStatus === 'absent').length;
 
   const filteredEmployees = employees.filter(emp => {
@@ -101,6 +137,7 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
     }
     if (filterStatus === 'present') return emp.attendanceStatus === 'present';
     if (filterStatus === 'late') return emp.attendanceStatus === 'late';
+    if (filterStatus === 'on_leave') return emp.attendanceStatus === 'on_leave';
     if (filterStatus === 'absent') return emp.attendanceStatus === 'absent';
     return true;
   });
@@ -158,11 +195,11 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
         {/* คอนเทนเนอร์หลักตรงกลาง */}
         <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-4">
 
-          {/* Filter Bar 4 หมวด */}
-          <div className="grid grid-cols-4 gap-1.5 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm text-center">
+          {/* Filter Bar 5 หมวด */}
+          <div className="grid grid-cols-5 gap-1 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm text-center">
             <button
               onClick={() => setFilterStatus('all')}
-              className={`py-2 px-1.5 rounded-xl text-[10px] sm:text-xs font-bold transition cursor-pointer ${
+              className={`py-2 px-1 rounded-xl text-[10px] sm:text-xs font-bold transition cursor-pointer ${
                 filterStatus === 'all'
                   ? 'bg-emerald-50 text-[#15803d] border border-emerald-200/60'
                   : 'text-gray-400 hover:text-gray-600'
@@ -173,7 +210,7 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
 
             <button
               onClick={() => setFilterStatus('present')}
-              className={`py-2 px-1.5 rounded-xl text-[10px] sm:text-xs font-bold transition cursor-pointer ${
+              className={`py-2 px-1 rounded-xl text-[10px] sm:text-xs font-bold transition cursor-pointer ${
                 filterStatus === 'present'
                   ? 'bg-emerald-100 text-emerald-800 border border-emerald-300/60'
                   : 'text-gray-400 hover:text-gray-600'
@@ -184,7 +221,7 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
 
             <button
               onClick={() => setFilterStatus('late')}
-              className={`py-2 px-1.5 rounded-xl text-[10px] sm:text-xs font-bold transition cursor-pointer ${
+              className={`py-2 px-1 rounded-xl text-[10px] sm:text-xs font-bold transition cursor-pointer ${
                 filterStatus === 'late'
                   ? 'bg-orange-100 text-orange-800 border border-orange-300/60'
                   : 'text-gray-400 hover:text-gray-600'
@@ -194,8 +231,19 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
             </button>
 
             <button
+              onClick={() => setFilterStatus('on_leave')}
+              className={`py-2 px-1 rounded-xl text-[10px] sm:text-xs font-bold transition cursor-pointer ${
+                filterStatus === 'on_leave'
+                  ? 'bg-purple-100 text-purple-800 border border-purple-300/60'
+                  : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              ลา/หยุด ({leaveCount})
+            </button>
+
+            <button
               onClick={() => setFilterStatus('absent')}
-              className={`py-2 px-1.5 rounded-xl text-[10px] sm:text-xs font-bold transition cursor-pointer ${
+              className={`py-2 px-1 rounded-xl text-[10px] sm:text-xs font-bold transition cursor-pointer ${
                 filterStatus === 'absent'
                   ? 'bg-gray-200 text-gray-700 border border-gray-300/60'
                   : 'text-gray-400 hover:text-gray-600'
@@ -250,6 +298,7 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
                         <span>สาย {emp.lateMinutes} นาที</span>
                       </span>
                     )}
+                    
                     {emp.attendanceStatus === 'absent' && (
                       <span className="px-3 py-1 bg-gray-100 text-gray-500 font-bold text-[10px] sm:text-xs rounded-xl border border-gray-200 flex items-center space-x-1">
                         <UserX size={13} />
@@ -258,22 +307,29 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
                     )}
                   </div>
 
-                  {/* เวลาลงเวลา เข้า/ออก */}
-                  <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 grid grid-cols-2 gap-2 text-xs sm:text-sm">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] sm:text-xs text-gray-400 font-medium">เวลาเข้างาน</span>
-                      <span className={`font-bold font-mono ${emp.checkInTime ? 'text-gray-800' : 'text-gray-300'}`}>
-                        {formatTime(emp.checkInTime)}
-                      </span>
+                  {/* เวลาลงเวลา เข้า/ออก หรือ รายละเอียดวันลา */}
+                  {emp.attendanceStatus === 'on_leave' ? (
+                    <div className="bg-purple-50/70 p-3 rounded-2xl border border-purple-100 text-xs sm:text-sm text-purple-800 flex items-center justify-between">
+                      <span className="font-semibold text-purple-700">สถานะ: {emp.isWeeklyOffDay ? 'วันหยุดประจำสัปดาห์' : 'อนุมัติวันลาแล้ว'}</span>
+                      <span className="font-bold font-mono">{emp.leaveReason}</span>
                     </div>
+                  ) : (
+                    <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] sm:text-xs text-gray-400 font-medium">เวลาเข้างาน</span>
+                        <span className={`font-bold font-mono ${emp.checkInTime ? 'text-gray-800' : 'text-gray-300'}`}>
+                          {formatTime(emp.checkInTime)}
+                        </span>
+                      </div>
 
-                    <div className="flex flex-col border-l border-gray-200 pl-4">
-                      <span className="text-[10px] sm:text-xs text-gray-400 font-medium">เวลาออกงาน</span>
-                      <span className={`font-bold font-mono ${emp.checkOutTime ? 'text-gray-800' : 'text-gray-300'}`}>
-                        {formatTime(emp.checkOutTime)}
-                      </span>
+                      <div className="flex flex-col border-l border-gray-200 pl-4">
+                        <span className="text-[10px] sm:text-xs text-gray-400 font-medium">เวลาออกงาน</span>
+                        <span className={`font-bold font-mono ${emp.checkOutTime ? 'text-gray-800' : 'text-gray-300'}`}>
+                          {formatTime(emp.checkOutTime)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               ))
             )}
