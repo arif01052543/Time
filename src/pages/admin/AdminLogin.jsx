@@ -94,7 +94,7 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
 
         <div className="inline-flex items-center space-x-1.5 mt-3 px-4 py-1.5 bg-white/20 rounded-full text-xs sm:text-sm font-medium backdrop-blur-sm">
           <Shield size={15} />
-          <span>สำหรับผู้ดูแลระบบ / เจ้าของร้าน</span>
+          <span>สำหรับผู้ดูแล/เจ้าของร้าน</span>
         </div>
       </div>
 

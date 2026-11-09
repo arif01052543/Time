@@ -173,3 +173,8 @@ input[type="time"]::-webkit-date-and-time-value {
   min-width: 0 !important;
   max-width: 100% !important;
 }
+/* บังคับซ่อน Input เลือกไฟล์ทั้งหมดเพื่อใช้ไอคอนกล้องแทน */
+input[type="file"],
+input[type="file"].hidden {
+  display: none !important;
+}

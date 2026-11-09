@@ -217,35 +217,45 @@ export default function EmployeeProfile({ currentUser, selectedBranch, onBack, o
           )}
 
           {/* PROFILE AVATAR OVERLAY CARD */}
-          <div className="-mt-12 relative z-20 bg-white rounded-3xl p-5 sm:p-6 shadow-lg border border-gray-100 text-center space-y-3">
-            <div className="relative w-24 h-24 sm:w-28 sm:h-28 mx-auto">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 bg-gray-100 rounded-full border-4 border-emerald-500 shadow-md overflow-hidden flex items-center justify-center text-3xl font-extrabold text-gray-400">
-                {userInfo?.avatar_url ? (
-                  <img src={userInfo.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  <span>{userInfo?.name ? userInfo.name.charAt(0) : 'U'}</span>
-                )}
-              </div>
+<div className="-mt-12 relative z-20 bg-white rounded-3xl p-5 sm:p-6 shadow-lg border border-gray-100 text-center space-y-3">
+  <div className="relative w-24 h-24 sm:w-28 sm:h-28 mx-auto">
+    
+    {/* รูปวงกลมโปรไฟล์ */}
+    <div className="w-24 h-24 sm:w-28 sm:h-28 bg-gray-100 rounded-full border-4 border-[#15803d] shadow-md overflow-hidden flex items-center justify-center text-2xl sm:text-3xl font-extrabold text-gray-400 shrink-0">
+      {userInfo?.avatar_url ? (
+        <img src={userInfo.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+      ) : (
+        <span>{userInfo?.name ? userInfo.name.charAt(0) : 'U'}</span>
+      )}
+    </div>
 
-              <label className="absolute bottom-0 right-0 bg-[#15803d] hover:bg-emerald-800 text-white p-2.5 sm:p-3 rounded-full shadow-md cursor-pointer transition transform active:scale-95 border-2 border-white">
-                <Camera size={16} />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  className="hidden"
-                  disabled={isUploading}
-                />
-              </label>
-            </div>
+    {/* ปุ่มไอคอนกล้อง (จัดวางแบบ Absolute ลอยซ้อนมุมขวาล่าง ซ่อนอินพุตดั้งเดิม) */}
+    <label className={`absolute bottom-0 right-0 bg-[#15803d] hover:bg-emerald-800 text-white w-8 h-8 sm:w-9 sm:h-9 rounded-full shadow-md flex items-center justify-center cursor-pointer transition transform active:scale-95 border-2 border-white z-10 ${
+      isUploading ? 'opacity-70 cursor-not-allowed' : ''
+    }`}>
+      {isUploading ? (
+        <Loader2 size={16} className="animate-spin text-white" />
+      ) : (
+        <Camera size={16} />
+      )}
+      <input
+  type="file"
+  accept="image/*"
+  onChange={handleAvatarChange}
+  className="hidden"
+  style={{ display: 'none' }} /* เพิ่มบรรทัดนี้เพื่อบังคับซ่อนปุ่มดั้งเดิมถาวร */
+  disabled={isUploading}
+/>
+    </label>
+  </div>
 
-            <div>
-              <h2 className="font-extrabold text-gray-800 text-lg sm:text-xl">{userInfo?.name || 'พนักงาน'}</h2>
-              <span className="inline-block mt-0.5 px-3 py-1 bg-emerald-50 text-[#15803d] text-xs font-bold rounded-full border border-emerald-200/80">
-                {userInfo?.position || 'พนักงานทั่วไป'}
-              </span>
-            </div>
-          </div>
+  <div>
+    <h2 className="font-extrabold text-gray-800 text-lg sm:text-xl">{userInfo?.name || 'พนักงาน'}</h2>
+    <span className="inline-block mt-0.5 px-3 py-1 bg-emerald-50 text-[#15803d] text-xs font-bold rounded-full border border-emerald-200/80">
+      {userInfo?.position || 'พนักงานทั่วไป'}
+    </span>
+  </div>
+</div>
 
           <div className="space-y-4">
 
@@ -472,11 +482,13 @@ export default function EmployeeProfile({ currentUser, selectedBranch, onBack, o
                     <span className="text-xs sm:text-sm font-bold text-gray-600 group-hover:text-emerald-800">คลิกเพื่ออัปโหลด QR Code</span>
                     <span className="text-[10px] sm:text-xs text-gray-400">รองรับไฟล์ JPG, PNG</span>
                     <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleQrUpload}
-                      className="hidden"
-                    />
+  type="file"
+  accept="image/*"
+  onChange={handleAvatarChange}
+  className="hidden"
+  style={{ display: 'none' }} /* เพิ่มบรรทัดนี้เพื่อบังคับซ่อนปุ่มดั้งเดิมถาวร */
+  disabled={isUploading}
+/>
                   </label>
                 )}
               </div>

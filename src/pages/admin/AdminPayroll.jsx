@@ -14,8 +14,12 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('all'); // 'all' | 'pending' | 'paid'
   const [loading, setLoading] = useState(true);
 
-  const [selectedMonth, setSelectedMonth] = useState('พฤศจิกายน 2026');
-  const [selectedPeriod, setSelectedPeriod] = useState('full');
+  // 1. สร้าง State เก็บปี-เดือน และ งวดการจ่าย (กำหนดชื่อตัวแปรให้ตรงกัน)
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [selectedPeriod, setSelectedPeriod] = useState('full'); // 'full', 'half1', 'half2'
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
 
   const [selectedEmp, setSelectedEmp] = useState(null);
@@ -33,24 +37,28 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
     advanceDeduction: 0,
   });
 
+  // 2. คำนวณช่วงวันที่แบบไดนามิก ตามเดือนที่เลือก (selectedMonth) และงวด (selectedPeriod)
   const getDateRange = () => {
-    const year = 2026;
-    const month = 10;
-    let start = new Date(year, month, 1);
-    let end = new Date(year, month + 1, 0, 23, 59, 59);
+    if (!selectedMonth) return { start: new Date(), end: new Date() };
+    const [year, monthNum] = selectedMonth.split('-').map(Number);
+    const monthIndex = monthNum - 1; // 0-indexed ใน JS Date
+
+    let start = new Date(year, monthIndex, 1, 0, 0, 0);
+    let end = new Date(year, monthIndex + 1, 0, 23, 59, 59);
 
     if (selectedPeriod === 'half1') {
-      end = new Date(year, month, 15, 23, 59, 59);
+      end = new Date(year, monthIndex, 15, 23, 59, 59);
     } else if (selectedPeriod === 'half2') {
-      start = new Date(year, month, 16, 0, 0, 0);
+      start = new Date(year, monthIndex, 16, 0, 0, 0);
     }
     return { start, end };
   };
 
+  // 3. ดึงข้อมูลใหม่ทันทีเมื่อมีการเปลี่ยน สาขา, เดือน หรือ งวดการจ่าย
   useEffect(() => {
     fetchPayrollData();
     fetchPaidHistory();
-  }, [selectedBranch, selectedPeriod]);
+  }, [selectedBranch, selectedMonth, selectedPeriod]);
 
   // ดึงประวัติคนที่จ่ายเงินแล้วจาก Supabase
   const fetchPaidHistory = async () => {
@@ -81,6 +89,8 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
       console.error('Error fetching paid history:', err);
     }
   };
+
+
 
   const calculateLateMinutes = (entryTimeStr, shiftStartStr) => {
     if (!entryTimeStr || !shiftStartStr) return 0;
@@ -321,19 +331,29 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
               </div>
             </div>
 
+            {/* แถบเลือกเดือน และ งวดการจ่าย */}
             <div className="grid grid-cols-2 gap-2 bg-[#0e5c2b]/80 backdrop-blur-md p-2 rounded-2xl text-xs sm:text-sm relative">
-              <div className="flex items-center justify-between bg-[#15803d]/90 px-3 py-2 rounded-xl text-emerald-100 font-semibold border border-emerald-600/50">
-                <span>{selectedMonth}</span>
-                <Calendar size={15} className="text-emerald-200" />
+              
+              {/* ช่องเลือกเดือน (กดเปิด Native Month Picker บนมือถือ/คอมได้จริง) */}
+              <div className="relative flex items-center justify-between bg-[#0b4822] hover:bg-[#093d1c] px-3 py-2 rounded-xl text-white font-semibold border border-emerald-500/50 transition cursor-pointer overflow-hidden min-w-0">
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                />
+                <span className="truncate text-xs sm:text-sm">{selectedMonth}</span>
+                <Calendar size={15} className="text-emerald-200 shrink-0 ml-1 pointer-events-none" />
               </div>
 
-              <div className="relative">
+              {/* ช่องเลือกรอบการจ่าย */}
+              <div className="relative min-w-0">
                 <button
                   onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
                   className="w-full flex items-center justify-between bg-[#0b4822] px-3 py-2 rounded-xl text-white font-semibold border border-emerald-500/50 hover:bg-[#093d1c] transition cursor-pointer"
                 >
                   <span className="truncate text-xs sm:text-sm">{periodLabelMap[selectedPeriod]}</span>
-                  <ChevronDown size={15} />
+                  <ChevronDown size={15} className="shrink-0 ml-1" />
                 </button>
 
                 {showPeriodDropdown && (
