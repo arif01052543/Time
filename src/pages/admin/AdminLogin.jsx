@@ -118,7 +118,7 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="กรอกชื่อผู้ใช้งาน (เช่น admin)"
+                  placeholder="กรอกชื่อผู้ใช้งาน"
                   className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-emerald-600 focus:bg-white transition text-gray-700"
                   required
                 />
@@ -126,7 +126,7 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1.5">รหัสผ่าน (PIN)</label>
+              <label className="text-xs font-bold text-gray-700 block mb-1.5">รหัสผ่าน</label>
               <div className="relative flex items-center">
                 <Lock size={18} className="absolute left-4 text-gray-400" />
                 <input

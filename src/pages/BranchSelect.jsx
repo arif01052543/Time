@@ -266,9 +266,9 @@ export default function BranchSelect({ currentUser, onSelectBranch, onLogout }) 
               <Lock size={32} />
             </div>
             <div>
-              <h3 className="font-bold text-lg text-gray-800">สิทธิ์จำนวนสาขาเต็มแล้ว</h3>
+              <h3 className="font-bold text-lg text-gray-800">ต้องการขยายสาขา</h3>
               <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                คุณใช้งานสิทธิ์ครบ {maxBranches} สาขาแล้ว หากต้องการเพิ่มสาขาใหม่ กรุณาติดต่อทีมงานเพื่อซื้อโควต้าปลดล็อกสาขาเพิ่ม
+                ตอนนี้คุณมี {maxBranches} สาขา หากต้องการเพิ่มสาขาใหม่ กรุณาติดต่อทีมงานเพื่อซื้อโควต้าปลดล็อกสาขาเพิ่ม
               </p>
             </div>
             <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-100 text-left space-y-1">
@@ -276,14 +276,14 @@ export default function BranchSelect({ currentUser, onSelectBranch, onLogout }) 
                 <PhoneCall size={12} />
                 <span>ช่องทางซื้อโควต้าเพิ่ม:</span>
               </p>
-              <p className="text-xs text-emerald-700 font-mono">LINE: @yourdeveloper</p>
-              <p className="text-xs text-emerald-700 font-mono">โทร: 08X-XXX-XXXX</p>
+              <p className="text-xs text-emerald-700 font-mono">LINE: @arif_mrn</p>
+              <p className="text-xs text-emerald-700 font-mono">โทร: 0810072917</p>
             </div>
             <button
               onClick={() => setShowContactModal(false)}
               className="w-full py-3 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl text-xs active:scale-95 transition shadow-md"
             >
-              ตกลง / ปิดหน้าต่าง
+              ปิดหน้าต่าง
             </button>
           </div>
         </div>

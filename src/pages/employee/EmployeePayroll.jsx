@@ -232,7 +232,7 @@ export default function EmployeePayroll({ currentUser, selectedBranch, onBack, o
               <div>
                 <h1 className="font-extrabold text-base leading-tight">ข้อมูลเงินเดือนของฉัน</h1>
                 <p className="text-[11px] text-emerald-100 font-light">
-                  สาขา: {selectedBranch?.shop_name || 'สาขาหลัก'}
+                  ชื่อร้าน: {selectedBranch?.shop_name || 'สาขาหลัก'}
                 </p>
               </div>
             </div>

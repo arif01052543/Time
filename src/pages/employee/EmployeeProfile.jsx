@@ -255,7 +255,7 @@ export default function EmployeeProfile({ currentUser, selectedBranch, onBack, o
 
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                  <span className="text-gray-400">สาขาที่สังกัด:</span>
+                  <span className="text-gray-400">ร้านที่สังกัด:</span>
                   <span className="font-bold text-gray-800">
                     {userInfo?.shops?.shop_name || selectedBranch?.shop_name || 'ร้านกาแฟ TT'}
                   </span>
