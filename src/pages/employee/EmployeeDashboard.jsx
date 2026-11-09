@@ -576,83 +576,84 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
       )}
 
       {/* MODAL ยื่นใบลา */}
-      {showLeaveModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center p-0 sm:p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-6 shadow-2xl space-y-4 text-xs sm:text-sm">
-            <div className="flex justify-between items-center border-b pb-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-emerald-100 text-[#15803d] rounded-xl flex items-center justify-center">
-                  <FileText size={18} />
-                </div>
-                <h3 className="font-extrabold text-gray-800 text-sm sm:text-base">ยื่นใบลา</h3>
-              </div>
-              <button 
-                onClick={() => setShowLeaveModal(false)} 
-                className="w-7 h-7 bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold rounded-full flex items-center justify-center transition cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
+{showLeaveModal && (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center p-0 sm:p-4 z-50 animate-in fade-in duration-200">
+    <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-5 sm:p-6 shadow-2xl space-y-4 text-xs sm:text-sm">
+      <div className="flex justify-between items-center border-b pb-3">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-emerald-100 text-[#15803d] rounded-xl flex items-center justify-center">
+            <FileText size={18} />
+          </div>
+          <h3 className="font-extrabold text-gray-800 text-sm sm:text-base">ยื่นใบลา</h3>
+        </div>
+        <button 
+          onClick={() => setShowLeaveModal(false)} 
+          className="w-7 h-7 bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold rounded-full flex items-center justify-center transition cursor-pointer"
+        >
+          ✕
+        </button>
+      </div>
 
-            <form onSubmit={handleSubmitLeave} className="space-y-3.5">
-              <div>
-                <label className="font-bold text-gray-700 block mb-1">ประเภทการลา</label>
-                <select
-                  value={leaveForm.leave_type}
-                  onChange={(e) => setLeaveForm({ ...leaveForm, leave_type: e.target.value })}
-                  className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs sm:text-sm cursor-pointer"
-                >
-                  <option value="ลากิจ">ลากิจ</option>
-                  <option value="ลาป่วย">ลาป่วย</option>
-                  <option value="ลาพักร้อน">ลาพักร้อน</option>
-                </select>
-              </div>
+      <form onSubmit={handleSubmitLeave} className="space-y-3.5">
+        <div>
+          <label className="font-bold text-gray-700 block mb-1">ประเภทการลา</label>
+          <select
+            value={leaveForm.leave_type}
+            onChange={(e) => setLeaveForm({ ...leaveForm, leave_type: e.target.value })}
+            className="w-full min-w-0 p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs sm:text-sm cursor-pointer"
+          >
+            <option value="ลากิจ">ลากิจ</option>
+            <option value="ลาป่วย">ลาป่วย</option>
+            <option value="ลาพักร้อน">ลาพักร้อน</option>
+          </select>
+        </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="font-bold text-gray-700 block mb-1">ตั้งแต่วันที่</label>
-                  <input
-                    type="date"
-                    value={leaveForm.start_date}
-                    onChange={(e) => setLeaveForm({ ...leaveForm, start_date: e.target.value })}
-                    className="w-full p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-medium"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-gray-700 block mb-1">ถึงวันที่</label>
-                  <input
-                    type="date"
-                    value={leaveForm.end_date}
-                    onChange={(e) => setLeaveForm({ ...leaveForm, end_date: e.target.value })}
-                    className="w-full p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-medium"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="font-bold text-gray-700 block mb-1">เหตุผลการลา</label>
-                <textarea
-                  rows={3}
-                  value={leaveForm.reason}
-                  onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
-                  placeholder="ระบุเหตุผลการลากิจ / ลาป่วย..."
-                  className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-md transition text-xs sm:text-sm active:scale-95 cursor-pointer"
-              >
-                ยื่นใบลา
-              </button>
-            </form>
+        {/* ปรับเป็น min-w-0 และซ่อนข้อความล้นด้วย truncate */}
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          <div className="min-w-0">
+            <label className="font-bold text-gray-700 block mb-1 truncate text-[11px] sm:text-xs">ตั้งแต่วันที่</label>
+            <input
+              type="date"
+              value={leaveForm.start_date}
+              onChange={(e) => setLeaveForm({ ...leaveForm, start_date: e.target.value })}
+              className="w-full min-w-0 px-2 py-2 sm:p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-[11px] sm:text-xs font-medium text-center"
+              required
+            />
+          </div>
+          <div className="min-w-0">
+            <label className="font-bold text-gray-700 block mb-1 truncate text-[11px] sm:text-xs">ถึงวันที่</label>
+            <input
+              type="date"
+              value={leaveForm.end_date}
+              onChange={(e) => setLeaveForm({ ...leaveForm, end_date: e.target.value })}
+              className="w-full min-w-0 px-2 py-2 sm:p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-[11px] sm:text-xs font-medium text-center"
+              required
+            />
           </div>
         </div>
-      )}
+
+        <div>
+          <label className="font-bold text-gray-700 block mb-1">เหตุผลการลา</label>
+          <textarea
+            rows={3}
+            value={leaveForm.reason}
+            onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
+            placeholder="ระบุเหตุผลการลากิจ / ลาป่วย..."
+            className="w-full min-w-0 p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="w-full py-3.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-md transition text-xs sm:text-sm active:scale-95 cursor-pointer"
+        >
+          ยื่นใบลา
+        </button>
+      </form>
+    </div>
+  </div>
+)}
 
       {/* MODAL ขอเบิกเงิน */}
       {showAdvanceModal && (

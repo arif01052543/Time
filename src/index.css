@@ -95,13 +95,30 @@ p {
   margin: 0;
 }
 
-/* ป้องกัน iOS Auto-Zoom เมื่อกดช่องพิมพ์ข้อความ */
+/* ป้องกัน iOS Auto-Zoom ตอนพิมพ์ข้อความ */
 @media screen and (max-width: 768px) {
   input, 
   select, 
   textarea {
     font-size: 16px !important;
   }
+}
+
+/* ป้องกัน Input, Date, Time, Select ดันกรอบล้น/ซ้อนทับกันบนมือถือ */
+input[type="date"],
+input[type="time"],
+select,
+input {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* ปรับระยะและรูปแบบของ Date / Time Picker ให้จัดกึ่งกลางสวยงาม */
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value {
+  text-align: center;
+  min-height: 1.2em;
 }
 
 code,
