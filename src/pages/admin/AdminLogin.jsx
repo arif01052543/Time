@@ -17,7 +17,7 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
       const cleanUsername = username.trim();
       const cleanPassword = password.trim();
 
-      // 1. ค้นหาผู้ใช้จากตาราง users (ใช้ ilike เพื่อไม่สนตัวพิมพ์เล็ก-ใหญ่)
+      // 1. ค้นหาผู้ใช้จากตาราง users
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -38,7 +38,7 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
         return;
       }
 
-      // 2. ดึงข้อมูลร้านค้าเพิ่มเติม (ถ้ามี shop_id)
+      // 2. ดึงข้อมูลร้านค้าเพิ่มเติม
       let shopData = null;
       if (userData.shop_id) {
         const { data: sData, error: sError } = await supabase
@@ -54,7 +54,6 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
         }
       }
 
-      // ผูกข้อมูลร้านค้ากลับเข้าไปใน Object
       const fullUserData = {
         ...userData,
         shops: shopData
@@ -72,91 +71,90 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center items-start sm:items-center p-0 sm:p-4">
-      <div className="w-full max-w-sm bg-white h-screen sm:h-auto sm:min-h-[620px] sm:rounded-[36px] shadow-2xl overflow-y-auto border-0 sm:border border-gray-100 flex flex-col justify-between">
+    <div className="min-h-screen w-full bg-white flex flex-col justify-between overflow-x-hidden">
+      
+      {/* Header แบนเนอร์สีเขียวเต็มความกว้างทุกหน้าจอ */}
+      <div className="bg-[#15803d] w-full pt-10 pb-12 px-6 text-center text-white relative rounded-b-[40px] md:rounded-b-[56px] shadow-md shrink-0 flex flex-col items-center justify-center">
         
-        {/* Header */}
-        <div className="bg-[#15803d] pt-8 pb-10 px-6 text-center text-white relative rounded-b-[40px] shadow-md shrink-0">
-          <button
-            type="button"
-            onClick={onSwitchToEmployee}
-            className="absolute top-5 right-5 bg-white/20 hover:bg-white/30 text-white text-xs px-3.5 py-1.5 rounded-full flex items-center space-x-1.5 backdrop-blur-sm transition font-medium active:scale-95"
-          >
-            <Users size={14} />
-            <span>พนักงาน</span>
-          </button>
+        <button
+          type="button"
+          onClick={onSwitchToEmployee}
+          className="absolute top-5 right-5 sm:top-6 sm:right-8 bg-white/20 hover:bg-white/30 text-white text-xs sm:text-sm px-4 py-2 rounded-full flex items-center space-x-2 backdrop-blur-sm transition font-medium active:scale-95 cursor-pointer"
+        >
+          <Users size={16} />
+          <span>เข้าสู่ระบบพนักงาน</span>
+        </button>
 
-          <div className="w-20 h-20 bg-white text-[#15803d] rounded-full flex items-center justify-center mx-auto mb-3 shadow-md mt-2">
-            <Clock size={44} strokeWidth={2.5} />
-          </div>
-
-          <h1 className="text-2xl font-black tracking-wider">TIME TRACK</h1>
-          <p className="text-xs text-emerald-100 mt-1 font-light">ระบบลงเวลาเข้า-ออกงาน</p>
-
-          <div className="inline-flex items-center space-x-1.5 mt-3 px-4 py-1.5 bg-white/20 rounded-full text-xs font-medium backdrop-blur-sm">
-            <Shield size={14} />
-            <span>สำหรับเจ้าของร้าน</span>
-          </div>
+        <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white text-[#15803d] rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg mt-4 sm:mt-2">
+          <Clock className="w-11 h-11 sm:w-14 sm:h-14" strokeWidth={2.5} />
         </div>
 
-        {/* Form */}
-        <div className="px-6 py-6 flex-1 flex flex-col justify-center">
-          <h2 className="text-center font-bold text-gray-800 text-xl mb-5">เข้าสู่ระบบ</h2>
+        <h1 className="text-2xl sm:text-3xl font-black tracking-wider">TIME TRACK</h1>
+        <p className="text-xs sm:text-sm text-emerald-100 mt-1 font-light">ระบบลงเวลาเข้า-ออกงาน</p>
 
-          {errorMsg && (
-            <div className="mb-4 p-3 bg-red-50 text-red-600 text-xs rounded-2xl text-center font-medium border border-red-100 break-words">
-              {errorMsg}
-            </div>
-          )}
-
-          <form onSubmit={handleAdminLogin} className="space-y-4">
-            <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1.5">ชื่อผู้ใช้งาน</label>
-              <div className="relative flex items-center">
-                <User size={18} className="absolute left-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="กรอกชื่อผู้ใช้งาน"
-                  className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-emerald-600 focus:bg-white transition text-gray-700"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-gray-700 block mb-1.5">รหัสผ่าน</label>
-              <div className="relative flex items-center">
-                <Lock size={18} className="absolute left-4 text-gray-400" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-emerald-600 focus:bg-white transition text-gray-700"
-                  required
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-4 mt-2 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-lg shadow-emerald-700/20 flex items-center justify-center space-x-2 transition active:scale-[0.98] disabled:bg-gray-400"
-            >
-              <span className="text-base">{loading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}</span>
-              <LogIn size={18} />
-            </button>
-          </form>
+        <div className="inline-flex items-center space-x-1.5 mt-3 px-4 py-1.5 bg-white/20 rounded-full text-xs sm:text-sm font-medium backdrop-blur-sm">
+          <Shield size={15} />
+          <span>สำหรับผู้ดูแลระบบ / เจ้าของร้าน</span>
         </div>
-
-        {/* Footer */}
-        <div className="p-4 text-center text-[11px] text-gray-400 shrink-0">
-          TIME TRACK © Admin Management
-        </div>
-
       </div>
+
+      {/* Form ฟอร์มตรงกลาง ขยายตามขนาดหน้าจออย่างสมดุล (ไม่มีกรอบซ้อน) */}
+      <div className="w-full max-w-md mx-auto px-6 py-8 sm:py-12 flex-1 flex flex-col justify-center">
+        <h2 className="text-center font-bold text-gray-800 text-xl sm:text-2xl mb-6">เข้าสู่ระบบ</h2>
+
+        {errorMsg && (
+          <div className="mb-5 p-3.5 bg-red-50 text-red-600 text-xs sm:text-sm rounded-2xl text-center font-medium border border-red-100 break-words">
+            {errorMsg}
+          </div>
+        )}
+
+        <form onSubmit={handleAdminLogin} className="space-y-5">
+          <div>
+            <label className="text-xs sm:text-sm font-bold text-gray-700 block mb-1.5">ชื่อผู้ใช้งาน</label>
+            <div className="relative flex items-center">
+              <User size={18} className="absolute left-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="กรอกชื่อผู้ใช้งาน"
+                className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-emerald-600 focus:bg-white transition text-gray-700 font-medium"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs sm:text-sm font-bold text-gray-700 block mb-1.5">รหัสผ่าน</label>
+            <div className="relative flex items-center">
+              <Lock size={18} className="absolute left-4 text-gray-400 pointer-events-none" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-emerald-600 focus:bg-white transition text-gray-700 font-mono font-bold"
+                required
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 mt-2 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-lg shadow-emerald-700/20 flex items-center justify-center space-x-2 transition active:scale-[0.98] disabled:bg-gray-400 cursor-pointer text-sm sm:text-base"
+          >
+            <span>{loading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}</span>
+            <LogIn size={18} />
+          </button>
+        </form>
+      </div>
+
+      {/* Footer ด้านล่างสุด */}
+      <div className="w-full p-4 text-center text-xs text-gray-400 shrink-0">
+        TIME TRACK © Admin Management
+      </div>
+
     </div>
   );
 }
