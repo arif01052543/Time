@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../services/supabaseClient';
+import { supabase, setActiveShopId } from '../../services/supabaseClient';
 import { 
   ArrowLeft, Calendar, ChevronDown, CheckCircle2, 
   Banknote, X, Sliders, FileText, Check,
   CreditCard, Upload, Image as ImageIcon, Trash2,
-  Home, Users, Calculator, Settings, QrCode, Download,
-  TrendingUp, TrendingDown, Clock, UserCheck, AlertCircle
+  Home, Users, Calculator, Settings, Download,
+  TrendingUp, TrendingDown, Clock, CalendarRange
 } from 'lucide-react';
 
 export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
@@ -14,13 +14,25 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('all'); // 'all' | 'pending' | 'paid'
   const [loading, setLoading] = useState(true);
 
-  // 1. สร้าง State เก็บปี-เดือน และ งวดการจ่าย
+  // 1. State เก็บปี-เดือน และ งวดการจ่าย
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
-  const [selectedPeriod, setSelectedPeriod] = useState('full'); // 'full', 'half1', 'half2'
+  // 'full' | 'half1' | 'half2' | 'week1' | 'week2' | 'week3' | 'week4' | 'custom'
+  const [selectedPeriod, setSelectedPeriod] = useState('full');
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
+
+  // State สำหรับช่วงวันที่แบบกำหนดเอง (Custom)
+  const [customStart, setCustomStart] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  });
+  const [customEnd, setCustomEnd] = useState(() => {
+    const now = new Date();
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  });
 
   const [selectedEmp, setSelectedEmp] = useState(null);
   const [showPayslipModal, setShowPayslipModal] = useState(false);
@@ -37,11 +49,43 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
     advanceDeduction: 0,
   });
 
-  // 2. คำนวณช่วงวันที่แบบไดนามิก ตามเดือนที่เลือก (selectedMonth) และงวด (selectedPeriod)
+  // อัปเดตวันที่เริ่มต้น-สิ้นสุดของโหมดกำหนดเองให้สอดคล้องกับเดือนที่เลือกเมื่อเปลี่ยนเดือน
+  const handleMonthChange = (newMonth) => {
+    setSelectedMonth(newMonth);
+    if (newMonth) {
+      const [y, m] = newMonth.split('-').map(Number);
+      const lastDay = new Date(y, m, 0).getDate();
+      setCustomStart(`${newMonth}-01`);
+      setCustomEnd(`${newMonth}-${String(lastDay).padStart(2, '0')}`);
+    }
+  };
+
+  // สร้างรหัส Period Key สำหรับบันทึกและเช็กประวัติการจ่ายเงินในฐานข้อมูล
+  const getActivePeriodKey = () => {
+    if (selectedPeriod === 'custom') {
+      return `custom_${customStart}_${customEnd}`;
+    }
+    return selectedPeriod;
+  };
+
+  // 2. คำนวณช่วงวันที่แบบไดนามิก ตามเดือนและงวดที่เลือก
   const getDateRange = () => {
+    if (selectedPeriod === 'custom') {
+      const [sy, sm, sd] = (customStart || `${selectedMonth}-01`).split('-').map(Number);
+      const [ey, em, ed] = (customEnd || `${selectedMonth}-01`).split('-').map(Number);
+      let start = new Date(sy, sm - 1, sd, 0, 0, 0);
+      let end = new Date(ey, em - 1, ed, 23, 59, 59);
+      if (start > end) {
+        const temp = start;
+        start = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 0, 0, 0);
+        end = new Date(temp.getFullYear(), temp.getMonth(), temp.getDate(), 23, 59, 59);
+      }
+      return { start, end };
+    }
+
     if (!selectedMonth) return { start: new Date(), end: new Date() };
     const [year, monthNum] = selectedMonth.split('-').map(Number);
-    const monthIndex = monthNum - 1; // 0-indexed ใน JS Date
+    const monthIndex = monthNum - 1;
 
     let start = new Date(year, monthIndex, 1, 0, 0, 0);
     let end = new Date(year, monthIndex + 1, 0, 23, 59, 59);
@@ -50,15 +94,32 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
       end = new Date(year, monthIndex, 15, 23, 59, 59);
     } else if (selectedPeriod === 'half2') {
       start = new Date(year, monthIndex, 16, 0, 0, 0);
+    } else if (selectedPeriod === 'week1') {
+      start = new Date(year, monthIndex, 1, 0, 0, 0);
+      end = new Date(year, monthIndex, 7, 23, 59, 59);
+    } else if (selectedPeriod === 'week2') {
+      start = new Date(year, monthIndex, 8, 0, 0, 0);
+      end = new Date(year, monthIndex, 14, 23, 59, 59);
+    } else if (selectedPeriod === 'week3') {
+      start = new Date(year, monthIndex, 15, 0, 0, 0);
+      end = new Date(year, monthIndex, 21, 23, 59, 59);
+    } else if (selectedPeriod === 'week4') {
+      start = new Date(year, monthIndex, 22, 0, 0, 0);
+      end = new Date(year, monthIndex + 1, 0, 23, 59, 59);
     }
+
     return { start, end };
   };
 
-  // 3. ดึงข้อมูลใหม่ทันทีเมื่อมีการเปลี่ยน สาขา, เดือน หรือ งวดการจ่าย
+  // 3. ดึงข้อมูลใหม่ทันทีเมื่อมีการเปลี่ยน สาขา, เดือน, งวด หรือช่วงวันที่กำหนดเอง
   useEffect(() => {
+    if (selectedPeriod === 'custom' && (!customStart || !customEnd)) return;
+    if (selectedBranch?.id) {
+      setActiveShopId(selectedBranch.id);
+    }
     fetchPayrollData();
     fetchPaidHistory();
-  }, [selectedBranch, selectedMonth, selectedPeriod]);
+  }, [selectedBranch, selectedMonth, selectedPeriod, customStart, customEnd]);
 
   // ดึงประวัติคนที่จ่ายเงินแล้วจาก Supabase
   const fetchPaidHistory = async () => {
@@ -68,11 +129,12 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
     }
 
     try {
+      const periodKey = getActivePeriodKey();
       const { data, error } = await supabase
         .from('payrolls')
         .select('*')
         .eq('month', selectedMonth)
-        .eq('period', selectedPeriod)
+        .eq('period', periodKey)
         .eq('shop_id', selectedBranch.id);
 
       if (error) throw error;
@@ -98,17 +160,49 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
     }
   };
 
+  // คำนวณนาทีมาสาย
   const calculateLateMinutes = (entryTimeStr, shiftStartStr) => {
     if (!entryTimeStr || !shiftStartStr) return 0;
     const entryDate = new Date(entryTimeStr);
+    if (isNaN(entryDate.getTime())) return 0;
+
     const [shiftHour, shiftMinute] = shiftStartStr.split(':').map(Number);
-    
     const shiftDate = new Date(entryDate);
     shiftDate.setHours(shiftHour, shiftMinute, 0, 0);
 
     const diffMs = entryDate - shiftDate;
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
     return diffMinutes > 0 ? diffMinutes : 0;
+  };
+
+  // คำนวณชั่วโมงทำงานจริงจากเวลาเข้า - เวลาออก (สำหรับพาร์ทไทม์)
+  const calculateEntryHours = (entry) => {
+    const inVal = entry.clock_in || entry.check_in || entry.in_time || entry.created_at;
+    const outVal = entry.clock_out || entry.check_out || entry.out_time || entry.end_time;
+
+    if (!inVal || !outVal) {
+      return { hours: 0, isIncomplete: true };
+    }
+
+    const inDate = new Date(inVal);
+    let outDate = new Date(outVal);
+
+    if (isNaN(outDate.getTime()) && typeof outVal === 'string' && outVal.includes(':')) {
+      const [h, m, s = 0] = outVal.split(':').map(Number);
+      outDate = new Date(inDate);
+      outDate.setHours(h, m, s, 0);
+      if (outDate < inDate) {
+        outDate.setDate(outDate.getDate() + 1); // กะข้ามเที่ยงคืน
+      }
+    }
+
+    if (isNaN(inDate.getTime()) || isNaN(outDate.getTime())) {
+      return { hours: 0, isIncomplete: true };
+    }
+
+    const diffMs = outDate - inDate;
+    const hours = diffMs > 0 ? diffMs / (1000 * 60 * 60) : 0;
+    return { hours, isIncomplete: false };
   };
 
   const fetchPayrollData = async () => {
@@ -149,23 +243,41 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
             .gte('created_at', start.toISOString())
             .lte('created_at', end.toISOString());
 
-          const daysWorked = (timeEntries || []).length;
+          const entries = timeEntries || [];
+          const daysWorked = entries.length;
           
           let totalLateMinutes = 0;
-          (timeEntries || []).forEach(entry => {
-            totalLateMinutes += calculateLateMinutes(entry.created_at, emp.work_start || '16:00');
+          let rawHoursWorked = 0;
+          let incompleteShifts = 0;
+
+          entries.forEach(entry => {
+            const clockInStr = entry.clock_in || entry.check_in || entry.in_time || entry.created_at;
+            totalLateMinutes += calculateLateMinutes(clockInStr, emp.work_start || '16:00');
+
+            const { hours, isIncomplete } = calculateEntryHours(entry);
+            rawHoursWorked += hours;
+            if (isIncomplete) incompleteShifts += 1;
           });
 
+          const hoursWorked = Number(rawHoursWorked.toFixed(2));
           const totalAdvances = (advances || []).reduce((sum, item) => sum + Number(item.amount), 0);
 
           const rate = Number(emp.salary_rate) || 0;
-          const gross = daysWorked * rate;
+          const isPartTime = emp.employment_type === 'part_time';
+
+          // พาร์ทไทม์คิดตามชั่วโมงจริง (ชม. × บาท/ชม.) | ประจำคิดรายวัน (วัน × บาท/วัน)
+          const gross = isPartTime
+            ? Number((hoursWorked * rate).toFixed(2))
+            : Number((daysWorked * rate).toFixed(2));
+
           const latePenalty = totalLateMinutes * (Number(emp.late_penalty_rate) || 0);
           const net = Math.max(0, gross - latePenalty - totalAdvances);
 
           return {
             ...emp,
             daysWorked,
+            hoursWorked,
+            incompleteShifts,
             lateMinutes: totalLateMinutes,
             latePenalty,
             grossSalary: gross,
@@ -231,6 +343,7 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
   const handleConfirmPayment = async () => {
     if (!selectedEmp || !selectedBranch?.id) return;
     setIsSaving(true);
+    setActiveShopId(selectedBranch.id);
 
     try {
       const finalNet = Math.max(
@@ -246,7 +359,7 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
         user_id: selectedEmp.id,
         shop_id: selectedBranch.id,
         month: selectedMonth,
-        period: selectedPeriod,
+        period: getActivePeriodKey(),
         gross_amount: selectedEmp.grossSalary,
         bonus: Number(adjustments.bonus || 0),
         deduction: Number(adjustments.deduction || 0),
@@ -281,7 +394,7 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
     }
   };
 
-  // การกรองข้อมูลพนักงาน (แยกประเภทพนักงาน และ แยกสถานะการโอนเงิน)
+  // การกรองข้อมูลพนักงาน
   const fullTimeEmps = employees.filter(
     (e) => !e.employment_type || e.employment_type === 'full_time' || e.employment_type === 'monthly' || e.employment_type === 'daily'
   );
@@ -305,11 +418,24 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
 
   const totalTransferred = Object.values(paidRecords).reduce((sum, r) => sum + r.finalNet, 0);
 
-  const periodLabelMap = {
-    full: 'เต็มเดือน (1 - สิ้นเดือน)',
-    half1: 'งวดแรก (วันที่ 1 - 15)',
-    half2: 'งวดหลัง (16 - สิ้นเดือน)',
-  };
+  const periodOptions = [
+    { key: 'full', label: 'เต็มเดือน (1 - สิ้นเดือน)', group: 'รายเดือน / ครึ่งเดือน' },
+    { key: 'half1', label: 'งวดแรก (วันที่ 1 - 15)', group: 'รายเดือน / ครึ่งเดือน' },
+    { key: 'half2', label: 'งวดหลัง (16 - สิ้นเดือน)', group: 'รายเดือน / ครึ่งเดือน' },
+    { key: 'week1', label: 'ราย 7 วัน - งวด 1 (วันที่ 1 - 7)', group: 'งวด 7 วันจ่ายครั้ง' },
+    { key: 'week2', label: 'ราย 7 วัน - งวด 2 (วันที่ 8 - 14)', group: 'งวด 7 วันจ่ายครั้ง' },
+    { key: 'week3', label: 'ราย 7 วัน - งวด 3 (วันที่ 15 - 21)', group: 'งวด 7 วันจ่ายครั้ง' },
+    { key: 'week4', label: 'ราย 7 วัน - งวด 4 (วันที่ 22 - สิ้นเดือน)', group: 'งวด 7 วันจ่ายครั้ง' },
+    { key: 'custom', label: 'กำหนดช่วงวันที่เอง', group: 'กำหนดเอง' },
+  ];
+
+  const currentPeriodLabel =
+    periodOptions.find((p) => p.key === selectedPeriod)?.label || 'เต็มเดือน (1 - สิ้นเดือน)';
+
+  // แสดงช่วงวันที่ที่กำลังคำนวณจริงให้อ่านง่าย
+  const { start: activeStart, end: activeEnd } = getDateRange();
+  const formatShortDate = (d) =>
+    d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
 
   // คำนวณยอดเงินของ modal
   const bonusVal = Number(adjustments.bonus || 0);
@@ -321,6 +447,8 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
   const totalIncome = grossVal + bonusVal;
   const totalDeduction = lateVal + advanceVal + deductionVal;
   const modalNetTotal = Math.max(0, totalIncome - totalDeduction);
+
+  const isSelectedEmpPartTime = selectedEmp?.employment_type === 'part_time';
 
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col relative overflow-x-hidden">
@@ -349,12 +477,12 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
             {/* แถบเลือกเดือน และ งวดการจ่าย */}
             <div className="grid grid-cols-2 gap-2 bg-[#0e5c2b]/80 backdrop-blur-md p-2 rounded-2xl text-xs sm:text-sm relative">
               
-              {/* ช่องเลือกเดือน (กดเปิด Native Month Picker บนมือถือ/คอมได้จริง) */}
+              {/* ช่องเลือกเดือน */}
               <div className="relative flex items-center justify-between bg-[#0b4822] hover:bg-[#093d1c] px-3 py-2 rounded-xl text-white font-semibold border border-emerald-500/50 transition cursor-pointer overflow-hidden min-w-0">
                 <input
                   type="month"
                   value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  onChange={(e) => handleMonthChange(e.target.value)}
                   className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
                 />
                 <span className="truncate text-xs sm:text-sm">{selectedMonth}</span>
@@ -367,33 +495,81 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
                   onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
                   className="w-full flex items-center justify-between bg-[#0b4822] px-3 py-2 rounded-xl text-white font-semibold border border-emerald-500/50 hover:bg-[#093d1c] transition cursor-pointer"
                 >
-                  <span className="truncate text-xs sm:text-sm">{periodLabelMap[selectedPeriod]}</span>
+                  <span className="truncate text-xs sm:text-sm">{currentPeriodLabel}</span>
                   <ChevronDown size={15} className="shrink-0 ml-1" />
                 </button>
 
                 {showPeriodDropdown && (
-                  <div className="absolute top-11 right-0 left-0 bg-[#1b4332] text-white rounded-2xl shadow-2xl overflow-hidden z-30 border border-emerald-500/40 py-1 text-xs sm:text-sm font-medium">
-                    <button
-                      onClick={() => { setSelectedPeriod('full'); setShowPeriodDropdown(false); }}
-                      className={`w-full text-left px-3.5 py-2.5 transition ${selectedPeriod === 'full' ? 'bg-[#2d6a4f] font-bold text-white' : 'text-emerald-100 hover:bg-[#2d6a4f]/50'}`}
-                    >
-                      เต็มเดือน (1 - สิ้นเดือน)
-                    </button>
-                    <button
-                      onClick={() => { setSelectedPeriod('half1'); setShowPeriodDropdown(false); }}
-                      className={`w-full text-left px-3.5 py-2.5 transition ${selectedPeriod === 'half1' ? 'bg-[#2d6a4f] font-bold text-white' : 'text-emerald-100 hover:bg-[#2d6a4f]/50'}`}
-                    >
-                      งวดแรก (วันที่ 1 - 15)
-                    </button>
-                    <button
-                      onClick={() => { setSelectedPeriod('half2'); setShowPeriodDropdown(false); }}
-                      className={`w-full text-left px-3.5 py-2.5 transition ${selectedPeriod === 'half2' ? 'bg-[#2d6a4f] font-bold text-white' : 'text-emerald-100 hover:bg-[#2d6a4f]/50'}`}
-                    >
-                      งวดหลัง (16 - สิ้นเดือน)
-                    </button>
+                  <div className="absolute top-11 right-0 left-0 sm:-left-16 bg-[#1b4332] text-white rounded-2xl shadow-2xl z-30 border border-emerald-500/40 py-1.5 text-xs sm:text-sm font-medium max-h-72 overflow-y-auto">
+                    {periodOptions.map((opt, idx) => {
+                      const showGroupHeader = idx === 0 || periodOptions[idx - 1].group !== opt.group;
+                      return (
+                        <React.Fragment key={opt.key}>
+                          {showGroupHeader && (
+                            <div className="px-3.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300/80 border-t border-emerald-700/50 first:border-t-0">
+                              {opt.group}
+                            </div>
+                          )}
+                          <button
+                            onClick={() => {
+                              setSelectedPeriod(opt.key);
+                              setShowPeriodDropdown(false);
+                            }}
+                            className={`w-full text-left px-3.5 py-2 transition cursor-pointer ${
+                              selectedPeriod === opt.key
+                                ? 'bg-[#2d6a4f] font-bold text-white'
+                                : 'text-emerald-100 hover:bg-[#2d6a4f]/50'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        </React.Fragment>
+                      );
+                    })}
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* ช่องเลือกช่วงวันที่เมื่อเลือก "กำหนดช่วงวันที่เอง" */}
+            {selectedPeriod === 'custom' && (
+              <div className="grid grid-cols-2 gap-2 bg-[#0b4822]/90 p-2.5 rounded-2xl border border-emerald-400/40 text-xs animate-in fade-in duration-150">
+                <div className="min-w-0">
+                  <label className="text-[10px] text-emerald-200 font-semibold block mb-1">
+                    ตั้งแต่วันที่
+                  </label>
+                  <input
+                    type="date"
+                    value={customStart}
+                    onChange={(e) => {
+                      setCustomStart(e.target.value);
+                      if (e.target.value) {
+                        setSelectedMonth(e.target.value.slice(0, 7));
+                      }
+                    }}
+                    className="w-full min-w-0 box-border px-2.5 py-1.5 rounded-xl bg-white text-gray-800 font-mono font-bold text-xs focus:outline-none"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <label className="text-[10px] text-emerald-200 font-semibold block mb-1">
+                    ถึงวันที่
+                  </label>
+                  <input
+                    type="date"
+                    value={customEnd}
+                    onChange={(e) => setCustomEnd(e.target.value)}
+                    className="w-full min-w-0 box-border px-2.5 py-1.5 rounded-xl bg-white text-gray-800 font-mono font-bold text-xs focus:outline-none"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* แถบแสดงช่วงวันที่คำนวณจริง */}
+            <div className="flex items-center justify-center space-x-1.5 text-[11px] sm:text-xs text-emerald-100 bg-white/10 py-1.5 px-3 rounded-xl">
+              <CalendarRange size={13} className="text-emerald-200 shrink-0" />
+              <span>
+                ช่วงวันที่คำนวณ: <strong>{formatShortDate(activeStart)}</strong> – <strong>{formatShortDate(activeEnd)}</strong>
+              </span>
             </div>
           </div>
         </div>
@@ -444,7 +620,7 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
                   : 'text-gray-400 hover:text-gray-600'
               }`}
             >
-              พาร์ทไทม์ ({partTimeEmps.length})
+              พาร์ทไทม์/รายชม. ({partTimeEmps.length})
             </button>
           </div>
 
@@ -501,6 +677,7 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
                 const paidData = paidRecords[emp.id];
                 const isPaid = !!paidData;
                 const netShow = isPaid ? paidData.finalNet : emp.netSalary;
+                const isEmpPartTime = emp.employment_type === 'part_time';
 
                 return (
                   <div
@@ -533,9 +710,16 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
 
                         <div>
                           <h3 className="font-bold text-gray-800 text-sm sm:text-base">{emp.name}</h3>
-                          <p className="text-[10px] sm:text-xs text-gray-400">
-                            ทำงาน {emp.daysWorked} วัน | สาย {emp.lateMinutes} นาที
+                          <p className="text-[10px] sm:text-xs text-gray-500 font-medium">
+                            {isEmpPartTime
+                              ? `ทำงาน ${emp.hoursWorked} ชม. (${emp.daysWorked} วัน) | สาย ${emp.lateMinutes} นาที`
+                              : `ทำงาน ${emp.daysWorked} วัน | สาย ${emp.lateMinutes} นาที`}
                           </p>
+                          {isEmpPartTime && emp.incompleteShifts > 0 && (
+                            <p className="text-[10px] text-amber-600 font-semibold mt-0.5">
+                              * มี {emp.incompleteShifts} กะที่ยังไม่ลงเวลาออกงาน
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -552,7 +736,10 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
                     <div className="mt-3 pt-2.5 border-t border-gray-50 text-xs sm:text-sm space-y-1">
                       <div className="flex justify-between text-gray-600">
                         <span className="text-gray-400">
-                          ค่าจ้างรวม (Gross) <span className="text-[10px] sm:text-xs">(วันละ ฿{emp.salary_rate})</span>
+                          ค่าจ้างรวม (Gross){' '}
+                          <span className="text-[10px] sm:text-xs">
+                            ({isEmpPartTime ? `ชม.ละ ฿${emp.salary_rate}` : `วันละ ฿${emp.salary_rate}`})
+                          </span>
                         </span>
                         <span className="font-semibold text-gray-700">฿{emp.grossSalary.toFixed(2)}</span>
                       </div>
@@ -623,6 +810,9 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
                 <span className="text-3xl font-black text-[#15803d] font-mono mt-1 block">
                   ฿{modalNetTotal.toFixed(2)}
                 </span>
+                <span className="text-[11px] text-emerald-700/80 mt-1 block">
+                  รอบ: {formatShortDate(activeStart)} – {formatShortDate(activeEnd)}
+                </span>
               </div>
 
               {/* 2. การ์ดสรุปประวัติการทำงาน */}
@@ -633,8 +823,17 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
                 </div>
                 <div className="grid grid-cols-2 gap-2 pt-0.5">
                   <div className="bg-white p-2.5 rounded-xl border border-gray-100">
-                    <span className="text-[10px] sm:text-xs text-gray-400 font-medium block">จำนวนวันทำงาน</span>
-                    <span className="font-bold text-gray-800 font-mono text-xs sm:text-sm">{selectedEmp.daysWorked} วัน</span>
+                    <span className="text-[10px] sm:text-xs text-gray-400 font-medium block">
+                      {isSelectedEmpPartTime ? 'ชั่วโมงทำงานรวม' : 'จำนวนวันทำงาน'}
+                    </span>
+                    <span className="font-bold text-gray-800 font-mono text-xs sm:text-sm">
+                      {isSelectedEmpPartTime ? `${selectedEmp.hoursWorked} ชม.` : `${selectedEmp.daysWorked} วัน`}
+                    </span>
+                    {isSelectedEmpPartTime && (
+                      <span className="text-[9px] sm:text-[10px] text-gray-400 block font-normal">
+                        (เข้างานทั้งหมด {selectedEmp.daysWorked} วัน)
+                      </span>
+                    )}
                   </div>
                   <div className="bg-white p-2.5 rounded-xl border border-gray-100">
                     <span className="text-[10px] sm:text-xs text-gray-400 font-medium block">เวลามาสายสะสม</span>
@@ -653,7 +852,11 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
                     <span>รายการเงินได้ (+)</span>
                   </div>
                   <div className="flex justify-between text-gray-600 pl-2">
-                    <span>ค่าจ้างพื้นฐาน ({selectedEmp.daysWorked} วัน × ฿{selectedEmp.salary_rate})</span>
+                    <span>
+                      {isSelectedEmpPartTime
+                        ? `ค่าจ้างพื้นฐาน (${selectedEmp.hoursWorked} ชม. × ฿${selectedEmp.salary_rate})`
+                        : `ค่าจ้างพื้นฐาน (${selectedEmp.daysWorked} วัน × ฿${selectedEmp.salary_rate})`}
+                    </span>
                     <span className="font-bold text-gray-800 font-mono">฿{grossVal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-gray-600 pl-2">

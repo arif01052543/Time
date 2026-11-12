@@ -219,6 +219,8 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
     filterType === 'pending' ? pendingEmps :
     filterType === 'full_time' ? fullTimeEmps : partTimeEmps;
 
+  const isPartTime = formData.employment_type === 'part_time';
+
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col relative overflow-x-hidden">
       
@@ -504,29 +506,68 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
                 </div>
               </div>
 
-              {/* ประเภทการจ้าง & อัตราค่าจ้าง (กรอบสีเขียว) */}
-              <div className="grid grid-cols-2 gap-2 bg-emerald-50/70 p-3 rounded-2xl border border-emerald-100 w-full box-border">
+              {/* ประเภทการจ้าง & อัตราค่าจ้าง (แยกหน่วย บาท/วัน กับ บาท/ชม. ชัดเจน) */}
+              <div
+                className={`grid grid-cols-2 gap-2 p-3 rounded-2xl border w-full box-border transition-colors ${
+                  isPartTime
+                    ? 'bg-blue-50/70 border-blue-200'
+                    : 'bg-emerald-50/70 border-emerald-200'
+                }`}
+              >
                 <div className="min-w-0 overflow-hidden">
-                  <label className="font-bold text-emerald-800 block mb-1 truncate text-xs">ประเภทการจ้าง</label>
+                  <label
+                    className={`font-bold block mb-1 truncate text-xs ${
+                      isPartTime ? 'text-blue-900' : 'text-emerald-800'
+                    }`}
+                  >
+                    ประเภทการจ้าง
+                  </label>
                   <select
                     value={formData.employment_type}
                     onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
-                    className="w-full min-w-0 block px-2 py-2 border rounded-xl bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs cursor-pointer box-border"
+                    className={`w-full min-w-0 block px-2 py-2 border rounded-xl bg-white focus:outline-none font-bold text-xs cursor-pointer box-border ${
+                      isPartTime
+                        ? 'text-blue-800 border-blue-200 focus:border-blue-600'
+                        : 'text-emerald-800 border-emerald-200 focus:border-emerald-600'
+                    }`}
                   >
-                    <option value="full_time">ประจำ</option>
-                    <option value="part_time">พาร์ทไทม์</option>
+                    <option value="full_time">ประจำ (รายวัน)</option>
+                    <option value="part_time">พาร์ทไทม์ (รายชม.)</option>
                   </select>
                 </div>
+
                 <div className="min-w-0 overflow-hidden">
-                  <label className="font-bold text-emerald-800 block mb-1 truncate text-xs">อัตราค่าจ้าง (บาท)</label>
-                  <input
-                    type="number"
-                    value={formData.salary_rate}
-                    onChange={(e) => setFormData({ ...formData, salary_rate: e.target.value })}
-                    placeholder="400"
-                    className="w-full min-w-0 block px-2 py-2 border rounded-xl bg-white font-mono focus:outline-none focus:border-emerald-600 text-xs font-bold box-border"
-                    required
-                  />
+                  <label
+                    className={`font-bold block mb-1 truncate text-xs ${
+                      isPartTime ? 'text-blue-900' : 'text-emerald-800'
+                    }`}
+                  >
+                    อัตราค่าจ้าง ({isPartTime ? 'บาท/ชม.' : 'บาท/วัน'})
+                  </label>
+                  <div className="relative flex items-center">
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.salary_rate}
+                      onChange={(e) => setFormData({ ...formData, salary_rate: e.target.value })}
+                      placeholder={isPartTime ? '50' : '400'}
+                      className={`w-full min-w-0 block pl-2.5 pr-14 py-2 border rounded-xl bg-white font-mono focus:outline-none text-xs font-bold box-border ${
+                        isPartTime
+                          ? 'border-blue-200 focus:border-blue-600 text-blue-900'
+                          : 'border-emerald-200 focus:border-emerald-600 text-emerald-900'
+                      }`}
+                      required
+                    />
+                    <span
+                      className={`absolute right-2 text-[10px] font-bold px-1.5 py-0.5 rounded-md pointer-events-none ${
+                        isPartTime
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-emerald-100 text-emerald-800'
+                      }`}
+                    >
+                      {isPartTime ? 'บาท/ชม.' : 'บาท/วัน'}
+                    </span>
+                  </div>
                 </div>
               </div>
 

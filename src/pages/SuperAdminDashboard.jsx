@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase, setActiveShopId } from '../services/supabaseClient';
 import {
   ShieldCheck, Store, UserPlus, Lock, Unlock, Copy, Check,
-  LogOut, Calendar, Users, RefreshCw, KeyRound, Plus, X
+  LogOut, Calendar, Users, RefreshCw, KeyRound, Plus, X,
+  Pencil, Trash2
 } from 'lucide-react';
 
 export default function SuperAdminDashboard({ onBack }) {
@@ -26,6 +27,20 @@ export default function SuperAdminDashboard({ onBack }) {
   const [branchModalShop, setBranchModalShop] = useState(null);
   const [newBranchName, setNewBranchName] = useState('');
   const [addingBranch, setAddingBranch] = useState(false);
+
+  // State สำหรับแก้ไขข้อมูลร้าน/สาขา
+  const [editModalShop, setEditModalShop] = useState(null);
+  const [editForm, setEditForm] = useState({
+    shop_name: '',
+    admin_name: '',
+    admin_pin: '',
+    expire_date: '',
+    subscription_status: 'active'
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  // State สำหรับสถานะกำลังลบ
+  const [deletingShopId, setDeletingShopId] = useState('');
 
   useEffect(() => {
     setActiveShopId(''); // เคลียร์รหัสร้านค้างในเครื่องทุกครั้งที่เข้าหน้า Super Admin
@@ -96,7 +111,7 @@ export default function SuperAdminDashboard({ onBack }) {
     setNewBranchName(`${shop.shop_name} สาขา 2`);
   };
 
-  // บันทึกสาขาใหม่ผูกกับเจ้าของร้านคนเดิม
+  // บันทึกสาขาใหม่ผูกกับเจ้าของร้านคนเดิม (พร้อมดึงพิกัดเริ่มต้นจากร้านต้นทาง)
   const handleAddBranch = async (e) => {
     e.preventDefault();
     if (!branchModalShop || !newBranchName.trim()) return;
@@ -139,26 +154,35 @@ export default function SuperAdminDashboard({ onBack }) {
         throw new Error('ไม่พบบัญชีเจ้าของร้านต้นทาง กรุณาตรวจสอบข้อมูลแอดมิน');
       }
 
-      // 2. อัปเดตสาขาหลักให้มี owner_id ตรงกัน (กันกรณีสาขาเก่ายังไม่มี owner_id)
+      // 2. ดึงค่าพิกัด latitude / longitude ของร้านต้นทางมาเป็นค่าเริ่มต้น
+      const { data: parentShop } = await supabase
+        .from('shops')
+        .select('latitude, longitude')
+        .eq('id', branchModalShop.shop_id)
+        .maybeSingle();
+
+      // 3. อัปเดตสาขาหลักให้มี owner_id ตรงกัน (กันกรณีสาขาเก่ายังไม่มี owner_id)
       await supabase
         .from('shops')
         .update({ owner_id: ownerUser.id })
         .eq('id', branchModalShop.shop_id)
         .is('owner_id', null);
 
-      // 3. สร้างสาขาใหม่ผูกกับ owner_id เดียวกัน
+      // 4. สร้างสาขาใหม่ผูกกับ owner_id เดียวกัน พร้อมค่า latitude/longitude ไม่ให้เป็น null
       const { error: insertErr } = await supabase
         .from('shops')
         .insert([{
           shop_name: newBranchName.trim(),
           owner_id: ownerUser.id,
+          latitude: parentShop?.latitude ?? 0,
+          longitude: parentShop?.longitude ?? 0,
           subscription_status: branchModalShop.subscription_status || 'active',
           expire_date: branchModalShop.expire_date || null
         }]);
 
       if (insertErr) throw insertErr;
 
-      // 4. นับจำนวนสาขาทั้งหมดของเจ้าของคนนี้ และอัปเดตโควต้า max_branches ให้อัตโนมัติ
+      // 5. นับจำนวนสาขาทั้งหมดของเจ้าของคนนี้ และอัปเดตโควต้า max_branches ให้อัตโนมัติ
       const { count } = await supabase
         .from('shops')
         .select('id', { count: 'exact', head: true })
@@ -178,6 +202,103 @@ export default function SuperAdminDashboard({ onBack }) {
       alert('เพิ่มสาขาไม่สำเร็จ: ' + err.message);
     } finally {
       setAddingBranch(false);
+    }
+  };
+
+  // เปิดหน้าต่างแก้ไขข้อมูลร้าน/สาขา
+  const openEditModal = (shop) => {
+    setEditModalShop(shop);
+    setEditForm({
+      shop_name: shop.shop_name || '',
+      admin_name: shop.admin_name || '',
+      admin_pin: shop.admin_pin || '',
+      expire_date: shop.expire_date || '',
+      subscription_status: shop.subscription_status || 'active'
+    });
+  };
+
+  // บันทึกการแก้ไขร้าน/สาขา
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editModalShop || !editForm.shop_name.trim()) return;
+
+    if (editModalShop.admin_name && editForm.admin_pin.trim().length !== 4) {
+      alert('รหัส PIN แอดมินต้องมี 4 หลัก');
+      return;
+    }
+
+    setSavingEdit(true);
+    setActiveShopId('');
+    try {
+      // 1. อัปเดตข้อมูลในตาราง shops
+      const { error: shopErr } = await supabase
+        .from('shops')
+        .update({
+          shop_name: editForm.shop_name.trim(),
+          expire_date: editForm.expire_date || null,
+          subscription_status: editForm.subscription_status
+        })
+        .eq('id', editModalShop.shop_id);
+
+      if (shopErr) throw shopErr;
+
+      // 2. หากเป็นร้านหลักที่มีบัญชีแอดมิน ให้อัปเดตชื่อแอดมินและ PIN ด้วย
+      if (editModalShop.admin_name) {
+        const { error: userErr } = await supabase
+          .from('users')
+          .update({
+            name: editForm.admin_name.trim(),
+            pin: editForm.admin_pin.trim()
+          })
+          .eq('shop_id', editModalShop.shop_id)
+          .in('role', ['admin', 'owner']);
+
+        if (userErr) throw userErr;
+      }
+
+      alert('บันทึกการแก้ไขเรียบร้อยแล้ว!');
+      setEditModalShop(null);
+      fetchTenants();
+    } catch (err) {
+      alert('แก้ไขข้อมูลไม่สำเร็จ: ' + err.message);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  // ลบร้านค้าหรือสาขา
+  const handleDeleteShop = async (shop) => {
+    const isSubBranch = !shop.admin_name;
+    const warningMsg = isSubBranch
+      ? `ยืนยันการลบสาขา "${shop.shop_name}" ?\n(ข้อมูลพนักงานและประวัติลงเวลาของสาขานี้จะถูกลบทั้งหมด แต่ร้านหลักยังอยู่ปกติ)`
+      : `⚠️ ยืนยันการลบร้าน "${shop.shop_name}" ?\nข้อมูลแอดมิน พนักงาน สลิปเงินเดือน และประวัติลงเวลาทั้งหมดของร้านนี้จะถูกลบถาวร ไม่สามารถกู้คืนได้!`;
+
+    if (!window.confirm(warningMsg)) return;
+
+    setDeletingShopId(shop.shop_id);
+    setActiveShopId('');
+    try {
+      // ลบข้อมูลที่ผูกกับ shop_id ตามลำดับเพื่อป้องกันติด Foreign Key
+      await supabase.from('payrolls').delete().eq('shop_id', shop.shop_id);
+      await supabase.from('advances').delete().eq('shop_id', shop.shop_id);
+      await supabase.from('leaves').delete().eq('shop_id', shop.shop_id);
+      await supabase.from('time_entries').delete().eq('shop_id', shop.shop_id);
+      await supabase.from('users').delete().eq('shop_id', shop.shop_id);
+
+      // ลบตัวร้าน/สาขาออกจากตาราง shops
+      const { error: delErr } = await supabase
+        .from('shops')
+        .delete()
+        .eq('id', shop.shop_id);
+
+      if (delErr) throw delErr;
+
+      alert(`ลบ "${shop.shop_name}" เรียบร้อยแล้ว`);
+      fetchTenants();
+    } catch (err) {
+      alert('ลบไม่สำเร็จ: ' + err.message);
+    } finally {
+      setDeletingShopId('');
     }
   };
 
@@ -364,10 +485,11 @@ export default function SuperAdminDashboard({ onBack }) {
 
           {tenants.map((shop) => {
             const isActive = shop.subscription_status === 'active';
+            const isDeletingThis = deletingShopId === shop.shop_id;
             return (
               <div
                 key={shop.shop_id}
-                className={`bg-white p-4 sm:p-5 rounded-2xl border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                className={`bg-white p-4 sm:p-5 rounded-2xl border shadow-sm flex flex-col justify-between gap-3.5 ${
                   isActive ? 'border-gray-100' : 'border-red-200 bg-red-50/30'
                 }`}
               >
@@ -408,13 +530,22 @@ export default function SuperAdminDashboard({ onBack }) {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                {/* แถบปุ่มจัดการทั้งหมด */}
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100">
                   <button
                     onClick={() => openAddBranchModal(shop)}
                     className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold flex items-center space-x-1 transition cursor-pointer"
                   >
                     <Plus size={14} />
                     <span>เพิ่มสาขา</span>
+                  </button>
+
+                  <button
+                    onClick={() => openEditModal(shop)}
+                    className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold flex items-center space-x-1 transition cursor-pointer"
+                  >
+                    <Pencil size={13} />
+                    <span>แก้ไข</span>
                   </button>
 
                   <button
@@ -429,12 +560,21 @@ export default function SuperAdminDashboard({ onBack }) {
                     onClick={() => handleToggleStatus(shop)}
                     className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-1 transition cursor-pointer ${
                       isActive
-                        ? 'bg-red-100 hover:bg-red-200 text-red-700'
+                        ? 'bg-orange-100 hover:bg-orange-200 text-orange-800'
                         : 'bg-emerald-600 hover:bg-emerald-700 text-white'
                     }`}
                   >
                     {isActive ? <Lock size={14} /> : <Unlock size={14} />}
                     <span>{isActive ? 'ระงับร้าน' : 'ปลดล็อก'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteShop(shop)}
+                    disabled={isDeletingThis}
+                    className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-bold flex items-center space-x-1 transition cursor-pointer ml-auto"
+                  >
+                    <Trash2 size={13} />
+                    <span>{isDeletingThis ? 'กำลังลบ...' : 'ลบ'}</span>
                   </button>
                 </div>
               </div>
@@ -485,6 +625,115 @@ export default function SuperAdminDashboard({ onBack }) {
               >
                 {addingBranch ? 'กำลังสร้างสาขา...' : 'ยืนยันเปิดสาขาใหม่'}
               </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal แก้ไขข้อมูลร้านค้า/สาขา */}
+      {editModalShop && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="font-extrabold text-gray-800 text-base flex items-center space-x-2">
+                <Pencil size={17} className="text-amber-600" />
+                <span>แก้ไขข้อมูลร้านค้า / สาขา</span>
+              </h3>
+              <button
+                onClick={() => setEditModalShop(null)}
+                className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-500 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-3.5 text-xs sm:text-sm">
+              <div>
+                <label className="font-bold text-gray-700 block mb-1">ชื่อร้าน / ชื่อสาขา *</label>
+                <input
+                  type="text"
+                  value={editForm.shop_name}
+                  onChange={(e) => setEditForm({ ...editForm, shop_name: e.target.value })}
+                  className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-semibold"
+                  required
+                />
+              </div>
+
+              {editModalShop.admin_name && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-gray-700 block mb-1">ชื่อแอดมิน *</label>
+                    <input
+                      type="text"
+                      value={editForm.admin_name}
+                      onChange={(e) => setEditForm({ ...editForm, admin_name: e.target.value })}
+                      className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-gray-700 block mb-1">รหัส PIN (4 หลัก) *</label>
+                    <input
+                      type="text"
+                      maxLength={4}
+                      value={editForm.admin_pin}
+                      onChange={(e) => setEditForm({ ...editForm, admin_pin: e.target.value })}
+                      className="w-full p-3 border rounded-xl bg-gray-50 font-mono font-bold focus:bg-white focus:outline-none focus:border-emerald-600"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold text-gray-700">วันหมดอายุรอบบิล</label>
+                  {editForm.expire_date && (
+                    <button
+                      type="button"
+                      onClick={() => setEditForm({ ...editForm, expire_date: '' })}
+                      className="text-[11px] text-red-500 hover:underline cursor-pointer"
+                    >
+                      ล้างวันที่
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="date"
+                  value={editForm.expire_date}
+                  onChange={(e) => setEditForm({ ...editForm, expire_date: e.target.value })}
+                  className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-gray-700 block mb-1">สถานะการใช้งาน</label>
+                <select
+                  value={editForm.subscription_status}
+                  onChange={(e) => setEditForm({ ...editForm, subscription_status: e.target.value })}
+                  className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-semibold"
+                >
+                  <option value="active">ใช้งานปกติ (Active)</option>
+                  <option value="suspended">ระงับการใช้งาน (Suspended)</option>
+                </select>
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditModalShop(null)}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl transition cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="flex-1 py-3 bg-[#15803d] hover:bg-emerald-800 disabled:bg-gray-400 text-white font-bold rounded-2xl shadow-md transition cursor-pointer"
+                >
+                  {savingEdit ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
+                </button>
+              </div>
             </form>
           </div>
         </div>

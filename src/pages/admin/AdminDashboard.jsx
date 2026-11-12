@@ -183,7 +183,7 @@ export default function AdminDashboard({ currentUser, selectedBranch, onSwitchBr
 
   if (activeTab === 'settings') {
     return (
-      <AdminSettings
+      <AdminSettings 
         currentUser={currentUser} 
         selectedBranch={branchInfo} 
         onBack={() => handleNavigateTab('home')} 
@@ -216,8 +216,8 @@ export default function AdminDashboard({ currentUser, selectedBranch, onSwitchBr
   if (subView === 'attendance') {
     return (
       <AdminAttendanceDetails 
-        selectedBranch={branchInfo}
-        onBack={handleBackSubView}
+        selectedBranch={branchInfo} 
+        onBack={handleBackSubView} 
         onTabChange={handleNavigateTab}
         initialFilter={attendanceInitialFilter}
       />
@@ -234,19 +234,24 @@ export default function AdminDashboard({ currentUser, selectedBranch, onSwitchBr
         <div className="bg-[#15803d] p-5 sm:p-6 text-white rounded-b-[32px] sm:rounded-b-[40px] shadow-md sticky top-0 z-20 w-full">
           <div className="max-w-3xl mx-auto">
             <div className="flex justify-between items-center gap-2 mb-4">
-              <div className="flex items-center space-x-3 min-w-0">
+              {/* ฝั่งซ้าย: ไอคอนร้าน + ชื่อร้าน + ยินดีต้อนรับ + สลับสาขา */}
+              <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm shrink-0">
                   <Store size={22} className="text-white sm:w-6 sm:h-6" />
                 </div>
-                <div className="min-w-0">
-                  <h1 className="font-extrabold text-base sm:text-lg leading-tight truncate">{shopName}</h1>
-                  <div className="flex items-center space-x-2 mt-0.5">
-                    <p className="text-[11px] sm:text-xs text-emerald-100 font-light truncate">ยินดีต้อนรับ</p>
+                <div className="min-w-0 flex-1">
+                  <h1 className="font-extrabold text-white text-base sm:text-lg leading-tight truncate">
+                    {shopName}
+                  </h1>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
+                    <p className="text-[11px] sm:text-xs text-emerald-100 font-light whitespace-nowrap">
+                      ยินดีต้อนรับ
+                    </p>
                     {onSwitchBranch && (
                       <button
                         type="button"
                         onClick={onSwitchBranch}
-                        className="text-[10px] sm:text-[11px] bg-white/20 hover:bg-white/30 text-white px-2 py-0.5 rounded-lg font-semibold inline-flex items-center space-x-1 transition cursor-pointer shrink-0"
+                        className="text-[10px] sm:text-[11px] bg-white/20 hover:bg-white/30 text-white px-2.5 py-0.5 rounded-lg font-semibold inline-flex items-center space-x-1 transition cursor-pointer shrink-0"
                       >
                         <ArrowLeftRight size={10} />
                         <span>สลับสาขา</span>
@@ -256,18 +261,24 @@ export default function AdminDashboard({ currentUser, selectedBranch, onSwitchBr
                 </div>
               </div>
 
+              {/* ฝั่งขวา: ปุ่มแจ้งเตือน (ย่อเป็นไอคอนบนมือถือ) + ปุ่มออกจากระบบ */}
               <div className="flex items-center space-x-2 shrink-0">
                 <button
                   onClick={handleEnableNotifications}
-                  title="เปิดแจ้งเตือนมือถือ"
-                  className={`h-10 sm:h-11 px-3 rounded-2xl flex items-center space-x-1.5 text-xs font-bold transition backdrop-blur-sm cursor-pointer ${
+                  title={notifEnabled ? 'แจ้งเตือนเปิดอยู่' : 'เปิดแจ้งเตือน'}
+                  className={`relative w-10 h-10 sm:w-auto sm:h-11 sm:px-3.5 rounded-2xl flex items-center justify-center sm:space-x-1.5 text-xs font-bold transition backdrop-blur-sm cursor-pointer ${
                     notifEnabled
                       ? 'bg-emerald-400/25 text-white border border-emerald-200/40'
                       : 'bg-white/15 hover:bg-white/25 text-white'
                   }`}
                 >
-                  <Bell size={16} className={notifEnabled ? 'text-yellow-300 fill-yellow-300' : 'text-white'} />
-                  <span>{notifEnabled ? 'แจ้งเตือนเปิดอยู่' : 'เปิดแจ้งเตือน'}</span>
+                  <Bell size={18} className={notifEnabled ? 'text-yellow-300 fill-yellow-300' : 'text-white'} />
+                  {notifEnabled && (
+                    <span className="sm:hidden absolute top-2 right-2 w-2 h-2 bg-yellow-300 rounded-full ring-2 ring-[#15803d]" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {notifEnabled ? 'แจ้งเตือนเปิดอยู่' : 'เปิดแจ้งเตือน'}
+                  </span>
                 </button>
 
                 <button
