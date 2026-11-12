@@ -12,6 +12,7 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
   const [activeTab, setActiveTab] = useState('home');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [todayEntry, setTodayEntry] = useState(null);
+  const [shopInfo, setShopInfo] = useState(currentUser?.shops || null);
   const [loading, setLoading] = useState(false);
   const [distance, setDistance] = useState(null);
   const [isInRange, setIsInRange] = useState(false);
@@ -43,9 +44,33 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
     reason: ''
   });
 
+  // ดึงข้อมูลร้านค้าจริงล่าสุดจากฐานข้อมูล (ชื่อร้าน, พิกัด GPS, รัศมี, วันหยุด)
+  useEffect(() => {
+    const fetchShopDetails = async () => {
+      const targetShopId = currentUser?.shop_id || currentUser?.shops?.id;
+      if (!targetShopId) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('shops')
+          .select('*')
+          .eq('id', targetShopId)
+          .single();
+
+        if (!error && data) {
+          setShopInfo(data);
+        }
+      } catch (err) {
+        console.error('Error fetching shop details:', err);
+      }
+    };
+
+    fetchShopDetails();
+  }, [currentUser]);
+
   // ตรวจสอบวันหยุดประจำสัปดาห์
   const checkIsOffDay = () => {
-    const userOffDay = currentUser?.off_day || currentUser?.shops?.default_off_day || 'ไม่มีวันหยุด';
+    const userOffDay = currentUser?.off_day || shopInfo?.default_off_day || 'ไม่มีวันหยุด';
     if (!userOffDay || userOffDay === 'ไม่มีวันหยุด' || userOffDay === 'ไม่มี') return false;
 
     const thaiDays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
@@ -78,8 +103,10 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
     }
   }, [currentUser]);
 
-  // ติดตามพิกัด GPS เรียลไทม์ (watchPosition)
+  // ติดตามพิกัด GPS เรียลไทม์ (watchPosition) โดยอิงพิกัดจริงของร้านจาก shopInfo
   useEffect(() => {
+    if (!shopInfo) return;
+
     if (!navigator.geolocation) {
       setLocationStatus('อุปกรณ์ไม่รองรับระบบ GPS');
       setIsInRange(false);
@@ -91,9 +118,9 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
         const userLat = pos.coords.latitude;
         const userLng = pos.coords.longitude;
         
-        const shopLat = currentUser?.shops?.latitude || 13.7563;
-        const shopLng = currentUser?.shops?.longitude || 100.5018;
-        const allowedRadius = currentUser?.shops?.radius_meters || 100;
+        const shopLat = shopInfo.latitude || 13.7563;
+        const shopLng = shopInfo.longitude || 100.5018;
+        const allowedRadius = shopInfo.radius_meters || 100;
 
         const dist = calculateDistance(userLat, userLng, shopLat, shopLng);
         const roundedDist = Math.round(dist);
@@ -121,7 +148,7 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [currentUser]);
+  }, [shopInfo]);
 
   const fetchTodayAttendance = async () => {
     try {
@@ -168,7 +195,7 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
       return;
     }
 
-    const allowedRadius = currentUser?.shops?.radius_meters || 100;
+    const allowedRadius = shopInfo?.radius_meters || 100;
 
     if (distance === null) {
       showAlert('ไม่พบตำแหน่ง GPS', 'กรุณาเปิดระบบ GPS บนอุปกรณ์เพื่อระบุตำแหน่งของคุณ', 'warning');
@@ -195,7 +222,7 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
           status: 'present'
         };
 
-        const shopId = currentUser?.shop_id || currentUser?.shops?.id;
+        const shopId = currentUser?.shop_id || shopInfo?.id;
         if (shopId) payload.shop_id = shopId;
 
         const { error } = await supabase.from('time_entries').insert([payload]);
@@ -224,7 +251,7 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
   const handleSubmitLeave = async (e) => {
     e.preventDefault();
     try {
-      const shopId = currentUser?.shop_id || currentUser?.shops?.id;
+      const shopId = currentUser?.shop_id || shopInfo?.id;
       const payload = {
         user_id: currentUser.id,
         leave_type: leaveForm.leave_type,
@@ -256,7 +283,7 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
   const handleSubmitAdvance = async (e) => {
     e.preventDefault();
     try {
-      const shopId = currentUser?.shop_id || currentUser?.shops?.id;
+      const shopId = currentUser?.shop_id || shopInfo?.id;
       const payload = {
         user_id: currentUser.id,
         amount: parseFloat(advanceForm.amount),
@@ -294,13 +321,14 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
 
   const isCheckedIn = !!todayEntry;
   const isCheckedOut = !!todayEntry?.check_out;
+  const displayShopName = shopInfo?.shop_name || 'กำลังโหลดชื่อร้าน...';
 
   // ROUTING แท็บเงินเดือน
   if (activeTab === 'payroll') {
     return (
       <EmployeePayroll 
         currentUser={currentUser} 
-        selectedBranch={currentUser?.shops} 
+        selectedBranch={shopInfo} 
         onBack={() => setActiveTab('home')} 
         onTabChange={(tab) => setActiveTab(tab)} 
       />
@@ -312,7 +340,7 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
     return (
       <EmployeeProfile 
         currentUser={currentUser} 
-        selectedBranch={currentUser?.shops} 
+        selectedBranch={shopInfo} 
         onBack={() => setActiveTab('home')} 
         onTabChange={(tab) => setActiveTab(tab)} 
         onLogout={onLogout}
@@ -391,7 +419,7 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
                     
                     <div className="mt-1 inline-flex items-center space-x-1 bg-emerald-50 text-[#15803d] text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-md border border-emerald-100">
                       <Store size={12} />
-                      <span>{currentUser?.shops?.shop_name || 'ร้านตัวอย่าง สาขา1'}</span>
+                      <span>{displayShopName}</span>
                     </div>
                   </div>
                 </div>
@@ -446,7 +474,7 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
                 <div className="flex items-center justify-center space-x-1.5 text-xs sm:text-sm">
                   <MapPin size={15} className={isOffDay ? 'text-indigo-600' : isInRange ? 'text-[#15803d]' : 'text-red-600'} />
                   <h4 className="font-bold text-xs sm:text-sm text-gray-800 truncate">
-                    ร้าน: {currentUser?.shops?.shop_name || 'ร้านกาแฟ TT'}
+                    ร้าน: {displayShopName}
                   </h4>
                   <span className={`text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full ${
                     isOffDay
@@ -455,7 +483,7 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
                       ? 'bg-emerald-100 text-emerald-800' 
                       : 'bg-red-100 text-red-800'
                   }`}>
-                    {isOffDay ? 'วันหยุดพักผ่อน' : `ไม่เกิน ${currentUser?.shops?.radius_meters || 100} ม.`}
+                    {isOffDay ? 'วันหยุดพักผ่อน' : `ไม่เกิน ${shopInfo?.radius_meters || 100} ม.`}
                   </span>
                 </div>
                 <p className={`text-[10px] sm:text-xs font-medium mt-1 ${
@@ -576,84 +604,83 @@ export default function EmployeeDashboard({ currentUser, onLogout }) {
       )}
 
       {/* MODAL ยื่นใบลา */}
-{showLeaveModal && (
-  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center p-0 sm:p-4 z-50 animate-in fade-in duration-200">
-    <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-5 sm:p-6 shadow-2xl space-y-4 text-xs sm:text-sm">
-      <div className="flex justify-between items-center border-b pb-3">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-emerald-100 text-[#15803d] rounded-xl flex items-center justify-center">
-            <FileText size={18} />
+      {showLeaveModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center p-0 sm:p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-5 sm:p-6 shadow-2xl space-y-4 text-xs sm:text-sm">
+            <div className="flex justify-between items-center border-b pb-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-emerald-100 text-[#15803d] rounded-xl flex items-center justify-center">
+                  <FileText size={18} />
+                </div>
+                <h3 className="font-extrabold text-gray-800 text-sm sm:text-base">ยื่นใบลา</h3>
+              </div>
+              <button 
+                onClick={() => setShowLeaveModal(false)} 
+                className="w-7 h-7 bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold rounded-full flex items-center justify-center transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitLeave} className="space-y-3.5">
+              <div>
+                <label className="font-bold text-gray-700 block mb-1">ประเภทการลา</label>
+                <select
+                  value={leaveForm.leave_type}
+                  onChange={(e) => setLeaveForm({ ...leaveForm, leave_type: e.target.value })}
+                  className="w-full min-w-0 block p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs sm:text-sm cursor-pointer box-border"
+                >
+                  <option value="ลากิจ">ลากิจ</option>
+                  <option value="ลาป่วย">ลาป่วย</option>
+                  <option value="ลาพักร้อน">ลาพักร้อน</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full box-border">
+                <div className="min-w-0 overflow-hidden">
+                  <label className="font-bold text-gray-700 block mb-1 truncate text-[11px] sm:text-xs">ตั้งแต่วันที่</label>
+                  <input
+                    type="date"
+                    value={leaveForm.start_date}
+                    onChange={(e) => setLeaveForm({ ...leaveForm, start_date: e.target.value })}
+                    className="w-full min-w-0 block px-2 py-2 sm:p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-[11px] sm:text-xs font-medium text-center box-border"
+                    required
+                  />
+                </div>
+                <div className="min-w-0 overflow-hidden">
+                  <label className="font-bold text-gray-700 block mb-1 truncate text-[11px] sm:text-xs">ถึงวันที่</label>
+                  <input
+                    type="date"
+                    value={leaveForm.end_date}
+                    onChange={(e) => setLeaveForm({ ...leaveForm, end_date: e.target.value })}
+                    className="w-full min-w-0 block px-2 py-2 sm:p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-[11px] sm:text-xs font-medium text-center box-border"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-gray-700 block mb-1">เหตุผลการลา</label>
+                <textarea
+                  rows={3}
+                  value={leaveForm.reason}
+                  onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
+                  placeholder="ระบุเหตุผลการลากิจ / ลาป่วย..."
+                  className="w-full min-w-0 block p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm box-border"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-md transition text-xs sm:text-sm active:scale-95 cursor-pointer"
+              >
+                ยื่นใบลา
+              </button>
+            </form>
           </div>
-          <h3 className="font-extrabold text-gray-800 text-sm sm:text-base">ยื่นใบลา</h3>
         </div>
-        <button 
-          onClick={() => setShowLeaveModal(false)} 
-          className="w-7 h-7 bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold rounded-full flex items-center justify-center transition cursor-pointer"
-        >
-          ✕
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmitLeave} className="space-y-3.5">
-        <div>
-          <label className="font-bold text-gray-700 block mb-1">ประเภทการลา</label>
-          <select
-            value={leaveForm.leave_type}
-            onChange={(e) => setLeaveForm({ ...leaveForm, leave_type: e.target.value })}
-            className="w-full min-w-0 block p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs sm:text-sm cursor-pointer box-border"
-          >
-            <option value="ลากิจ">ลากิจ</option>
-            <option value="ลาป่วย">ลาป่วย</option>
-            <option value="ลาพักร้อน">ลาพักร้อน</option>
-          </select>
-        </div>
-
-        {/* ปรับกริดให้ล็อกความกว้าง 100% ไม่ดันล้นกรอบ */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full box-border">
-          <div className="min-w-0 overflow-hidden">
-            <label className="font-bold text-gray-700 block mb-1 truncate text-[11px] sm:text-xs">ตั้งแต่วันที่</label>
-            <input
-              type="date"
-              value={leaveForm.start_date}
-              onChange={(e) => setLeaveForm({ ...leaveForm, start_date: e.target.value })}
-              className="w-full min-w-0 block px-2 py-2 sm:p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-[11px] sm:text-xs font-medium text-center box-border"
-              required
-            />
-          </div>
-          <div className="min-w-0 overflow-hidden">
-            <label className="font-bold text-gray-700 block mb-1 truncate text-[11px] sm:text-xs">ถึงวันที่</label>
-            <input
-              type="date"
-              value={leaveForm.end_date}
-              onChange={(e) => setLeaveForm({ ...leaveForm, end_date: e.target.value })}
-              className="w-full min-w-0 block px-2 py-2 sm:p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-[11px] sm:text-xs font-medium text-center box-border"
-              required
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="font-bold text-gray-700 block mb-1">เหตุผลการลา</label>
-          <textarea
-            rows={3}
-            value={leaveForm.reason}
-            onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
-            placeholder="ระบุเหตุผลการลากิจ / ลาป่วย..."
-            className="w-full min-w-0 block p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm box-border"
-            required
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="w-full py-3.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-md transition text-xs sm:text-sm active:scale-95 cursor-pointer"
-        >
-          ยื่นใบลา
-        </button>
-      </form>
-    </div>
-  </div>
-)}
+      )}
 
       {/* MODAL ขอเบิกเงิน */}
       {showAdvanceModal && (

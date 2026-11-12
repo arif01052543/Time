@@ -8,6 +8,7 @@ import {
 
 export default function EmployeePayroll({ currentUser, selectedBranch, onBack, onTabChange }) {
   const [loading, setLoading] = useState(true);
+  const [shopInfo, setShopInfo] = useState(selectedBranch || currentUser?.shops || null);
   
   // State การเลือกเดือนและงวดการจ่ายเงิน
   const [selectedMonth, setSelectedMonth] = useState('พฤศจิกายน 2026');
@@ -15,6 +16,30 @@ export default function EmployeePayroll({ currentUser, selectedBranch, onBack, o
   
   const [showMonthDropdown, setShowMonthDropdown] = useState(false);
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
+
+  // ดึงข้อมูลชื่อร้านจริงล่าสุดจากฐานข้อมูล
+  useEffect(() => {
+    const fetchShopDetails = async () => {
+      const targetShopId = selectedBranch?.id || currentUser?.shop_id || currentUser?.shops?.id;
+      if (!targetShopId) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('shops')
+          .select('*')
+          .eq('id', targetShopId)
+          .single();
+
+        if (!error && data) {
+          setShopInfo(data);
+        }
+      } catch (err) {
+        console.error('Error fetching shop details:', err);
+      }
+    };
+
+    fetchShopDetails();
+  }, [currentUser, selectedBranch]);
 
   // ตัวเลือกเดือน
   const monthOptions = [
@@ -98,7 +123,7 @@ export default function EmployeePayroll({ currentUser, selectedBranch, onBack, o
         supabase.removeChannel(channel);
       };
     }
-  }, [currentUser, selectedBranch, selectedMonth, selectedPeriod]);
+  }, [currentUser, shopInfo, selectedMonth, selectedPeriod]);
 
   const calculateLateMinutes = (entryTimeStr, shiftStartStr) => {
     if (!entryTimeStr || !shiftStartStr) return 0;
@@ -232,7 +257,7 @@ export default function EmployeePayroll({ currentUser, selectedBranch, onBack, o
               <div>
                 <h1 className="font-extrabold text-base sm:text-lg leading-tight">ข้อมูลเงินเดือนของฉัน</h1>
                 <p className="text-[11px] sm:text-xs text-emerald-100 font-light">
-                  ชื่อร้าน: {selectedBranch?.shop_name || 'สาขาหลัก'}
+                  ชื่อร้าน: {shopInfo?.shop_name || 'กำลังโหลดชื่อร้าน...'}
                 </p>
               </div>
             </div>
