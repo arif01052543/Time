@@ -77,6 +77,7 @@ export default function AdminDashboard({ currentUser, selectedBranch, onLogout }
         .from('time_entries')
         .select('*')
         .gte('created_at', startOfDay.toISOString());
+      if (shopId) timeQuery = timeQuery.eq('shop_id', shopId);
 
       const { data: timeEntries } = await timeQuery;
 
