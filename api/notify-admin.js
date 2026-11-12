@@ -10,16 +10,22 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Missing ONESIGNAL_APP_ID or ONESIGNAL_REST_API_KEY' });
       }
   
-      // รองรับทั้ง API Key แบบใหม่ (os_v2_...) และแบบเก่า
       const authHeader = apiKey.startsWith('os_v2_') ? `Key ${apiKey}` : `Basic ${apiKey}`;
   
       let title = '';
       let message = '';
+      let filters = [];
   
-      // ลิงก์ทดสอบด่วนผ่านเบราว์เซอร์ (?test=1)
+      // ลิงก์ทดสอบด่วนผ่านเบราว์เซอร์ (?test=1 หรือ ?test=1&shop_id=ไอดีร้าน)
       if (req.method === 'GET' && req.query?.test === '1') {
         title = '🔔 ทดสอบระบบแจ้งเตือน';
         message = 'เชื่อมต่อ Vercel และ OneSignal สำเร็จแล้ว!';
+        filters = [{ field: 'tag', key: 'role', relation: '=', value: 'admin' }];
+  
+        if (req.query?.shop_id) {
+          filters.push({ operator: 'AND' });
+          filters.push({ field: 'tag', key: 'shop_id', relation: '=', value: String(req.query.shop_id) });
+        }
       } else if (req.method === 'POST') {
         const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
         const { table, type, record, old_record } = body || {};
@@ -30,11 +36,13 @@ export default async function handler(req, res) {
           return res.status(200).json({ message: 'No record' });
         }
   
-        // ดึงชื่อพนักงานจากตาราง users
+        // ดึงชื่อพนักงาน และ shop_id จากตาราง users
         let empName = 'พนักงาน';
+        let shopId = record.shop_id || null;
+  
         if (record.user_id && supabaseUrl && supabaseKey) {
           const userRes = await fetch(
-            `${supabaseUrl}/rest/v1/users?id=eq.${record.user_id}&select=name`,
+            `${supabaseUrl}/rest/v1/users?id=eq.${record.user_id}&select=name,shop_id`,
             {
               headers: {
                 apikey: supabaseKey,
@@ -44,6 +52,13 @@ export default async function handler(req, res) {
           );
           const users = await userRes.json();
           if (users?.[0]?.name) empName = users[0].name;
+          if (!shopId && users?.[0]?.shop_id) shopId = users[0].shop_id;
+        }
+  
+        // ป้องกันการส่งแจ้งเตือนข้ามร้านหากไม่พบ shop_id
+        if (!shopId) {
+          console.warn('No shop_id found for record:', record.id);
+          return res.status(200).json({ message: 'Ignored: missing shop_id' });
         }
   
         // 1. แจ้งเตือนเข้างาน / ออกงาน (ตาราง time_entries)
@@ -73,11 +88,17 @@ export default async function handler(req, res) {
         } else {
           return res.status(200).json({ message: 'Event not handled' });
         }
+  
+        // กรองส่งเฉพาะเครื่องที่มี role = admin และ shop_id ตรงกับร้านของพนักงาน
+        filters = [
+          { field: 'tag', key: 'role', relation: '=', value: 'admin' },
+          { operator: 'AND' },
+          { field: 'tag', key: 'shop_id', relation: '=', value: String(shopId) },
+        ];
       } else {
         return res.status(405).json({ error: 'Method Not Allowed' });
       }
   
-      // ส่งแจ้งเตือนผ่าน OneSignal API ไปยังเครื่องที่มี Tag role = admin
       const response = await fetch('https://onesignal.com/api/v1/notifications', {
         method: 'POST',
         headers: {
@@ -89,9 +110,7 @@ export default async function handler(req, res) {
           headings: { en: title, th: title },
           contents: { en: message, th: message },
           url: 'https://timetrack-rust-nu.vercel.app',
-          filters: [
-            { field: 'tag', key: 'role', relation: '=', value: 'admin' },
-          ],
+          filters,
         }),
       });
   
