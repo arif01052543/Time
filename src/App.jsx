@@ -5,6 +5,7 @@ import EmployeeRegister from './pages/employee/EmployeeRegister';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import BranchSelect from './pages/BranchSelect';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import { setActiveShopId } from './services/supabaseClient';
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [viewState, setViewState] = useState(() => {
     const params = new URLSearchParams(window.location.search);
+    if (params.get('super') === '1') return 'super-admin';
     return params.get('shop') ? 'employee-register' : 'employee-login';
   });
 
@@ -38,6 +40,18 @@ export default function App() {
     setUrlShopId('');
     setActiveShopId('');
   };
+
+  // 0. หน้าจัดการลูกค้าสำหรับเจ้าของระบบ (?super=1)
+  if (viewState === 'super-admin') {
+    return (
+      <SuperAdminDashboard
+        onBack={() => {
+          clearShopUrlParam();
+          setViewState('employee-login');
+        }}
+      />
+    );
+  }
 
   // 1. หน้าลงทะเบียนพนักงานใหม่ (เมื่อเปิดผ่านลิงก์เฉพาะร้าน ?shop=...)
   if (viewState === 'employee-register') {
