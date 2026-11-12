@@ -21,12 +21,28 @@ export default function BranchSelect({ currentUser, onSelectBranch, onLogout }) 
   const canAddBranch = branches.length < maxBranches;
 
   useEffect(() => {
-    fetchBranches();
-  }, []);
+    if (currentUser?.shop_id) {
+      fetchBranches();
+    } else {
+      setBranches([]);
+    }
+  }, [currentUser]);
 
   const fetchBranches = async () => {
-    const { data } = await supabase.from('shops').select('*');
-    if (data) setBranches(data);
+    if (!currentUser?.shop_id) {
+      setBranches([]);
+      return;
+    }
+
+    // กรองเฉพาะร้านที่ตรงกับ shop_id ของแอดมินที่ล็อกอินเข้ามา
+    const { data, error } = await supabase
+      .from('shops')
+      .select('*')
+      .eq('id', currentUser.shop_id);
+
+    if (!error && data) {
+      setBranches(data);
+    }
   };
 
   // ดึงพิกัด GPS ปัจจุบันให้อัตโนมัติ เพื่อความสะดวกของลูกค้า
