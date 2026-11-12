@@ -53,6 +53,10 @@ export default function EmployeeRegister({ onBack, onRegisterSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.shop_id) {
+      alert('กรุณาเลือกร้านที่ทำงานหรือสาขา');
+      return;
+    }
     if (formData.pin_code.length !== 4) {
       alert('กรุณากรอกรหัส PIN ให้ครบ 4 หลัก');
       return;
@@ -60,7 +64,7 @@ export default function EmployeeRegister({ onBack, onRegisterSuccess }) {
 
     setLoading(true);
     try {
-      const selectedBranch = branches.find(b => b.id === formData.shop_id);
+      const selectedBranch = branches.find(b => String(b.id) === String(formData.shop_id));
       const defaultStart = selectedBranch?.default_work_start || '16:00';
       const defaultEnd = selectedBranch?.default_work_end || '00:00';
       const defaultOff = selectedBranch?.default_off_day || 'วันพุธ';

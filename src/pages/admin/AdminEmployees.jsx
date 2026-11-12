@@ -40,13 +40,21 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
   }, [selectedBranch]);
 
   const fetchEmployees = async () => {
+    if (!selectedBranch?.id) {
+      setEmployees([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      let query = supabase.from('users').select('*').eq('role', 'employee');
-      if (selectedBranch?.id) {
-        query = query.eq('shop_id', selectedBranch.id);
-      }
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('role', 'employee')
+        .eq('shop_id', selectedBranch.id)
+        .order('created_at', { ascending: false });
+
       if (error) throw error;
       setEmployees(data || []);
     } catch (err) {
@@ -97,13 +105,39 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!selectedBranch?.id) {
+      alert('ไม่พบข้อมูลสาขา กรุณารีเฟรชหน้าจอ');
+      return;
+    }
+
     try {
+      const cleanPin = formData.pin_code.trim();
+
+      // เช็กรหัส PIN ซ้ำทั้งตาราง users (ไม่กรอง shop_id เพื่อป้องกัน PIN ชนกันข้ามร้าน)
+      let pinCheckQuery = supabase
+        .from('users')
+        .select('id')
+        .eq('pin_code', cleanPin);
+
+      if (editingEmp?.id) {
+        pinCheckQuery = pinCheckQuery.neq('id', editingEmp.id);
+      }
+
+      const { data: duplicateUsers, error: pinErr } = await pinCheckQuery;
+      if (pinErr) throw pinErr;
+
+      if (duplicateUsers && duplicateUsers.length > 0) {
+        alert(`รหัส PIN "${cleanPin}" ถูกใช้งานในระบบแล้ว กรุณาตั้งรหัส 4 หลักอื่น`);
+        return;
+      }
+
       const payload = {
         ...formData,
+        pin_code: cleanPin,
         salary_rate: parseFloat(formData.salary_rate) || 0,
         late_penalty_rate: parseFloat(formData.late_penalty_rate) || 0,
-        id_card_last4: formData.pin_code || '0000',
-        shop_id: selectedBranch?.id || null,
+        id_card_last4: cleanPin || '0000',
+        shop_id: selectedBranch.id,
         role: 'employee',
         status: 'approved'
       };
@@ -112,7 +146,8 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
         const { error } = await supabase
           .from('users')
           .update(payload)
-          .eq('id', editingEmp.id);
+          .eq('id', editingEmp.id)
+          .eq('shop_id', selectedBranch.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
@@ -134,7 +169,8 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
       const { error } = await supabase
         .from('users')
         .update({ status: 'rejected' })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('shop_id', selectedBranch.id);
 
       if (error) throw error;
       fetchEmployees();
@@ -146,7 +182,12 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
   const handleDelete = async (id, name) => {
     if (!confirm(`คุณต้องการลบพนักงาน "${name}" ออกจากระบบใช่หรือไม่?`)) return;
     try {
-      const { error } = await supabase.from('users').delete().eq('id', id);
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', id)
+        .eq('shop_id', selectedBranch.id);
+
       if (error) throw error;
       fetchEmployees();
     } catch (err) {
@@ -345,227 +386,227 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
       </div>
 
       {/* POPUP MODAL (อนุมัติ / แก้ไข) */}
-{showModal && (
-  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center p-0 sm:p-4 z-50 animate-in fade-in duration-200">
-    <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden">
-      
-      <div className="p-4 px-5 border-b flex justify-between items-center bg-white shrink-0">
-        <h3 className="font-bold text-gray-800 text-base">
-          {editingEmp?.status === 'pending' ? 'ตั้งค่า & อนุมัติพนักงานใหม่' : editingEmp ? 'แก้ไขข้อมูลพนักงาน' : 'เพิ่มพนักงานใหม่'}
-        </h3>
-        <button
-          onClick={() => setShowModal(false)}
-          className="w-8 h-8 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-full flex items-center justify-center transition cursor-pointer"
-        >
-          <X size={18} />
-        </button>
-      </div>
-
-      <form id="emp-form" onSubmit={handleSave} className="p-4 sm:p-5 overflow-y-auto space-y-3.5 text-xs sm:text-sm flex-1">
-        
-        {/* รูปโปรไฟล์ */}
-        <div>
-          <label className="font-bold text-gray-700 block mb-1">รูปโปรไฟล์</label>
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gray-100 rounded-full border flex items-center justify-center overflow-hidden shrink-0">
-              {formData.avatar_url ? (
-                <img src={formData.avatar_url} alt="Avatar Preview" className="w-full h-full object-cover" />
-              ) : (
-                <Image size={20} className="text-gray-400" />
-              )}
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFileUpload(e, 'avatar_url')}
-              className="text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer w-full min-w-0"
-            />
-          </div>
-        </div>
-
-        {/* ชื่อ - นามสกุล */}
-        <div>
-          <label className="font-bold text-gray-700 block mb-1">ชื่อ - นามสกุล</label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full min-w-0 p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
-            required
-          />
-        </div>
-
-        {/* PIN & ตำแหน่งงาน */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
-          <div className="min-w-0">
-            <label className="font-bold text-gray-700 block mb-1 truncate text-xs sm:text-sm">รหัส PIN (4 หลัก)</label>
-            <input
-              type="text"
-              maxLength={4}
-              value={formData.pin_code}
-              onChange={(e) => setFormData({ ...formData, pin_code: e.target.value })}
-              placeholder="1234"
-              className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-bold"
-              required
-            />
-          </div>
-          <div className="min-w-0">
-            <label className="font-bold text-gray-700 block mb-1 truncate text-xs sm:text-sm">ตำแหน่งงาน</label>
-            <input
-              type="text"
-              value={formData.position}
-              onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-              className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
-              required
-            />
-          </div>
-        </div>
-
-        {/* ประเภทการจ้าง & อัตราค่าจ้าง (กรอบสีเขียว) */}
-<div className="grid grid-cols-2 gap-2 bg-emerald-50/70 p-3 rounded-2xl border border-emerald-100 w-full box-border">
-  <div className="min-w-0 overflow-hidden">
-    <label className="font-bold text-emerald-800 block mb-1 truncate text-xs">ประเภทการจ้าง</label>
-    <select
-      value={formData.employment_type}
-      onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
-      className="w-full min-w-0 block px-2 py-2 border rounded-xl bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs cursor-pointer box-border"
-    >
-      <option value="full_time">ประจำ</option>
-      <option value="part_time">พาร์ทไทม์</option>
-    </select>
-  </div>
-  <div className="min-w-0 overflow-hidden">
-    <label className="font-bold text-emerald-800 block mb-1 truncate text-xs">อัตราค่าจ้าง (บาท)</label>
-    <input
-      type="number"
-      value={formData.salary_rate}
-      onChange={(e) => setFormData({ ...formData, salary_rate: e.target.value })}
-      placeholder="400"
-      className="w-full min-w-0 block px-2 py-2 border rounded-xl bg-white font-mono focus:outline-none focus:border-emerald-600 text-xs font-bold box-border"
-      required
-    />
-  </div>
-</div>
-
-{/* เวลาเข้างาน & เวลาออกงาน */}
-<div className="grid grid-cols-2 gap-2 w-full">
-  <div className="min-w-0 overflow-hidden">
-    <label className="font-bold text-gray-700 block mb-1 truncate text-xs">เวลาเข้างาน (กะ)</label>
-    <input
-      type="time"
-      value={formData.work_start}
-      onChange={(e) => setFormData({ ...formData, work_start: e.target.value })}
-      className="w-full min-w-0 block px-2 py-2 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 text-xs box-border"
-      required
-    />
-  </div>
-  <div className="min-w-0 overflow-hidden">
-    <label className="font-bold text-gray-700 block mb-1 truncate text-xs">เวลาออกงาน (กะ)</label>
-    <input
-      type="time"
-      value={formData.work_end}
-      onChange={(e) => setFormData({ ...formData, work_end: e.target.value })}
-      className="w-full min-w-0 block px-2 py-2 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 text-xs box-border"
-      required
-    />
-  </div>
-</div>
-
-        {/* วันหยุดประจำสัปดาห์ & หักมาสาย */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
-          <div className="min-w-0">
-            <label className="font-bold text-gray-700 block mb-1 truncate text-xs sm:text-sm">วันหยุดประจำสัปดาห์</label>
-            <select
-              value={formData.off_day}
-              onChange={(e) => setFormData({ ...formData, off_day: e.target.value })}
-              className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs sm:text-sm cursor-pointer"
-            >
-              <option value="ไม่มีวันหยุด">ไม่มีวันหยุด</option>
-              <option value="จันทร์">จันทร์</option>
-              <option value="อังคาร">อังคาร</option>
-              <option value="พุธ">พุธ</option>
-              <option value="พฤหัสบดี">พฤหัสบดี</option>
-              <option value="ศุกร์">ศุกร์</option>
-              <option value="เสาร์">เสาร์</option>
-              <option value="อาทิตย์">อาทิตย์</option>
-            </select>
-          </div>
-          <div className="min-w-0">
-            <label className="font-bold text-gray-700 block mb-1 truncate text-xs sm:text-sm">หักมาสาย (บาท/นาที)</label>
-            <input
-              type="number"
-              step="any"
-              value={formData.late_penalty_rate}
-              onChange={(e) => setFormData({ ...formData, late_penalty_rate: e.target.value })}
-              placeholder="1"
-              className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-mono"
-            />
-          </div>
-        </div>
-
-        {/* ข้อมูลธนาคาร */}
-        <div className="border-t pt-3 space-y-3">
-          <div className="flex items-center space-x-1.5 text-gray-800 font-bold text-xs sm:text-sm">
-            <CreditCard size={15} className="text-emerald-600 shrink-0" />
-            <span>ข้อมูลบัญชีรับเงิน</span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
-            <div className="min-w-0">
-              <label className="font-bold text-gray-700 block mb-1 truncate text-xs sm:text-sm">ธนาคาร</label>
-              <select
-                value={formData.bank_name}
-                onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
-                className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs sm:text-sm cursor-pointer"
+      {showModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-end sm:items-center p-0 sm:p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden">
+            
+            <div className="p-4 px-5 border-b flex justify-between items-center bg-white shrink-0">
+              <h3 className="font-bold text-gray-800 text-base">
+                {editingEmp?.status === 'pending' ? 'ตั้งค่า & อนุมัติพนักงานใหม่' : editingEmp ? 'แก้ไขข้อมูลพนักงาน' : 'เพิ่มพนักงานใหม่'}
+              </h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="w-8 h-8 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-full flex items-center justify-center transition cursor-pointer"
               >
-                <option value="กสิกรไทย">กสิกรไทย (KBANK)</option>
-                <option value="ไทยพาณิชย์">ไทยพาณิชย์ (SCB)</option>
-                <option value="กรุงเทพ">กรุงเทพ (BBL)</option>
-                <option value="กรุงไทย">กรุงไทย (KTB)</option>
-                <option value="กรุงศรี">กรุงศรี (BAY)</option>
-                <option value="ออมสิน">ออมสิน (GSB)</option>
-                <option value="พร้อมเพย์">พร้อมเพย์ (PromptPay)</option>
-              </select>
+                <X size={18} />
+              </button>
             </div>
 
-            <div className="min-w-0">
-              <label className="font-bold text-gray-700 block mb-1 truncate text-xs sm:text-sm">เลขที่บัญชี / พร้อมเพย์</label>
-              <input
-                type="text"
-                value={formData.bank_account_no}
-                onChange={(e) => setFormData({ ...formData, bank_account_no: e.target.value })}
-                className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-mono"
-              />
-            </div>
-          </div>
+            <form id="emp-form" onSubmit={handleSave} className="p-4 sm:p-5 overflow-y-auto space-y-3.5 text-xs sm:text-sm flex-1">
+              
+              {/* รูปโปรไฟล์ */}
+              <div>
+                <label className="font-bold text-gray-700 block mb-1">รูปโปรไฟล์</label>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full border flex items-center justify-center overflow-hidden shrink-0">
+                    {formData.avatar_url ? (
+                      <img src={formData.avatar_url} alt="Avatar Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <Image size={20} className="text-gray-400" />
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, 'avatar_url')}
+                    className="text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer w-full min-w-0"
+                  />
+                </div>
+              </div>
 
-          <div>
-            <label className="font-bold text-gray-700 block mb-1">ชื่อบัญชี</label>
-            <input
-              type="text"
-              value={formData.bank_account_name}
-              onChange={(e) => setFormData({ ...formData, bank_account_name: e.target.value })}
-              className="w-full min-w-0 p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
-            />
+              {/* ชื่อ - นามสกุล */}
+              <div>
+                <label className="font-bold text-gray-700 block mb-1">ชื่อ - นามสกุล</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full min-w-0 p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
+                  required
+                />
+              </div>
+
+              {/* PIN & ตำแหน่งงาน */}
+              <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+                <div className="min-w-0">
+                  <label className="font-bold text-gray-700 block mb-1 truncate text-xs sm:text-sm">รหัส PIN (4 หลัก)</label>
+                  <input
+                    type="text"
+                    maxLength={4}
+                    value={formData.pin_code}
+                    onChange={(e) => setFormData({ ...formData, pin_code: e.target.value })}
+                    placeholder="1234"
+                    className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-bold"
+                    required
+                  />
+                </div>
+                <div className="min-w-0">
+                  <label className="font-bold text-gray-700 block mb-1 truncate text-xs sm:text-sm">ตำแหน่งงาน</label>
+                  <input
+                    type="text"
+                    value={formData.position}
+                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                    className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* ประเภทการจ้าง & อัตราค่าจ้าง (กรอบสีเขียว) */}
+              <div className="grid grid-cols-2 gap-2 bg-emerald-50/70 p-3 rounded-2xl border border-emerald-100 w-full box-border">
+                <div className="min-w-0 overflow-hidden">
+                  <label className="font-bold text-emerald-800 block mb-1 truncate text-xs">ประเภทการจ้าง</label>
+                  <select
+                    value={formData.employment_type}
+                    onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
+                    className="w-full min-w-0 block px-2 py-2 border rounded-xl bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs cursor-pointer box-border"
+                  >
+                    <option value="full_time">ประจำ</option>
+                    <option value="part_time">พาร์ทไทม์</option>
+                  </select>
+                </div>
+                <div className="min-w-0 overflow-hidden">
+                  <label className="font-bold text-emerald-800 block mb-1 truncate text-xs">อัตราค่าจ้าง (บาท)</label>
+                  <input
+                    type="number"
+                    value={formData.salary_rate}
+                    onChange={(e) => setFormData({ ...formData, salary_rate: e.target.value })}
+                    placeholder="400"
+                    className="w-full min-w-0 block px-2 py-2 border rounded-xl bg-white font-mono focus:outline-none focus:border-emerald-600 text-xs font-bold box-border"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* เวลาเข้างาน & เวลาออกงาน */}
+              <div className="grid grid-cols-2 gap-2 w-full">
+                <div className="min-w-0 overflow-hidden">
+                  <label className="font-bold text-gray-700 block mb-1 truncate text-xs">เวลาเข้างาน (กะ)</label>
+                  <input
+                    type="time"
+                    value={formData.work_start}
+                    onChange={(e) => setFormData({ ...formData, work_start: e.target.value })}
+                    className="w-full min-w-0 block px-2 py-2 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 text-xs box-border"
+                    required
+                  />
+                </div>
+                <div className="min-w-0 overflow-hidden">
+                  <label className="font-bold text-gray-700 block mb-1 truncate text-xs">เวลาออกงาน (กะ)</label>
+                  <input
+                    type="time"
+                    value={formData.work_end}
+                    onChange={(e) => setFormData({ ...formData, work_end: e.target.value })}
+                    className="w-full min-w-0 block px-2 py-2 border rounded-xl bg-gray-50 text-center font-mono focus:bg-white focus:outline-none focus:border-emerald-600 text-xs box-border"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* วันหยุดประจำสัปดาห์ & หักมาสาย */}
+              <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+                <div className="min-w-0">
+                  <label className="font-bold text-gray-700 block mb-1 truncate text-xs sm:text-sm">วันหยุดประจำสัปดาห์</label>
+                  <select
+                    value={formData.off_day}
+                    onChange={(e) => setFormData({ ...formData, off_day: e.target.value })}
+                    className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs sm:text-sm cursor-pointer"
+                  >
+                    <option value="ไม่มีวันหยุด">ไม่มีวันหยุด</option>
+                    <option value="จันทร์">จันทร์</option>
+                    <option value="อังคาร">อังคาร</option>
+                    <option value="พุธ">พุธ</option>
+                    <option value="พฤหัสบดี">พฤหัสบดี</option>
+                    <option value="ศุกร์">ศุกร์</option>
+                    <option value="เสาร์">เสาร์</option>
+                    <option value="อาทิตย์">อาทิตย์</option>
+                  </select>
+                </div>
+                <div className="min-w-0">
+                  <label className="font-bold text-gray-700 block mb-1 truncate text-xs sm:text-sm">หักมาสาย (บาท/นาที)</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={formData.late_penalty_rate}
+                    onChange={(e) => setFormData({ ...formData, late_penalty_rate: e.target.value })}
+                    placeholder="1"
+                    className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* ข้อมูลธนาคาร */}
+              <div className="border-t pt-3 space-y-3">
+                <div className="flex items-center space-x-1.5 text-gray-800 font-bold text-xs sm:text-sm">
+                  <CreditCard size={15} className="text-emerald-600 shrink-0" />
+                  <span>ข้อมูลบัญชีรับเงิน</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+                  <div className="min-w-0">
+                    <label className="font-bold text-gray-700 block mb-1 truncate text-xs sm:text-sm">ธนาคาร</label>
+                    <select
+                      value={formData.bank_name}
+                      onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
+                      className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs sm:text-sm cursor-pointer"
+                    >
+                      <option value="กสิกรไทย">กสิกรไทย (KBANK)</option>
+                      <option value="ไทยพาณิชย์">ไทยพาณิชย์ (SCB)</option>
+                      <option value="กรุงเทพ">กรุงเทพ (BBL)</option>
+                      <option value="กรุงไทย">กรุงไทย (KTB)</option>
+                      <option value="กรุงศรี">กรุงศรี (BAY)</option>
+                      <option value="ออมสิน">ออมสิน (GSB)</option>
+                      <option value="พร้อมเพย์">พร้อมเพย์ (PromptPay)</option>
+                    </select>
+                  </div>
+
+                  <div className="min-w-0">
+                    <label className="font-bold text-gray-700 block mb-1 truncate text-xs sm:text-sm">เลขที่บัญชี / พร้อมเพย์</label>
+                    <input
+                      type="text"
+                      value={formData.bank_account_no}
+                      onChange={(e) => setFormData({ ...formData, bank_account_no: e.target.value })}
+                      className="w-full min-w-0 p-2.5 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="font-bold text-gray-700 block mb-1">ชื่อบัญชี</label>
+                  <input
+                    type="text"
+                    value={formData.bank_account_name}
+                    onChange={(e) => setFormData({ ...formData, bank_account_name: e.target.value })}
+                    className="w-full min-w-0 p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm"
+                  />
+                </div>
+              </div>
+
+            </form>
+
+            <div className="p-4 bg-gray-50 border-t shrink-0">
+              <button
+                type="submit"
+                form="emp-form"
+                className="w-full py-3.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-lg transition text-xs sm:text-sm flex items-center justify-center space-x-1.5 active:scale-[0.98] cursor-pointer"
+              >
+                <Save size={18} />
+                <span>{editingEmp?.status === 'pending' ? 'ยืนยันอนุมัติพนักงาน' : 'บันทึกข้อมูลพนักงาน'}</span>
+              </button>
+            </div>
+
           </div>
         </div>
-
-      </form>
-
-      <div className="p-4 bg-gray-50 border-t shrink-0">
-        <button
-          type="submit"
-          form="emp-form"
-          className="w-full py-3.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-lg transition text-xs sm:text-sm flex items-center justify-center space-x-1.5 active:scale-[0.98] cursor-pointer"
-        >
-          <Save size={18} />
-          <span>{editingEmp?.status === 'pending' ? 'ยืนยันอนุมัติพนักงาน' : 'บันทึกข้อมูลพนักงาน'}</span>
-        </button>
-      </div>
-
-    </div>
-  </div>
-)}
+      )}
 
       {/* Bottom Navigation Bar จัดกลางตามทุกขนาดหน้าจอ */}
       <div className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md bg-white/95 backdrop-blur-md rounded-[28px] shadow-xl border border-gray-100 p-1.5 flex justify-around items-center z-30">

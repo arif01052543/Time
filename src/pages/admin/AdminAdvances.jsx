@@ -21,9 +21,15 @@ export default function AdminAdvances({ selectedBranch, onBack, onTabChange }) {
   }, [selectedBranch]);
 
   const fetchAdvances = async () => {
+    if (!selectedBranch?.id) {
+      setAdvances([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('advances')
         .select(`
           *,
@@ -37,13 +43,9 @@ export default function AdminAdvances({ selectedBranch, onBack, onTabChange }) {
             qr_code_url
           )
         `)
+        .eq('shop_id', selectedBranch.id)
         .order('created_at', { ascending: false });
 
-      if (selectedBranch?.id) {
-        query = query.eq('shop_id', selectedBranch.id);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
       setAdvances(data || []);
     } catch (err) {
@@ -55,6 +57,8 @@ export default function AdminAdvances({ selectedBranch, onBack, onTabChange }) {
 
   // อัปเดตสถานะ (อนุมัติ / ปฏิเสธ)
   const handleUpdateStatus = async (id, newStatus) => {
+    if (!selectedBranch?.id) return;
+
     try {
       const { error } = await supabase
         .from('advances')
@@ -62,7 +66,8 @@ export default function AdminAdvances({ selectedBranch, onBack, onTabChange }) {
           status: newStatus,
           updated_at: new Date().toISOString()
         })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('shop_id', selectedBranch.id);
 
       if (error) throw error;
 

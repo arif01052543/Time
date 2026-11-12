@@ -14,7 +14,7 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('all'); // 'all' | 'pending' | 'paid'
   const [loading, setLoading] = useState(true);
 
-  // 1. สร้าง State เก็บปี-เดือน และ งวดการจ่าย (กำหนดชื่อตัวแปรให้ตรงกัน)
+  // 1. สร้าง State เก็บปี-เดือน และ งวดการจ่าย
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -62,11 +62,19 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
 
   // ดึงประวัติคนที่จ่ายเงินแล้วจาก Supabase
   const fetchPaidHistory = async () => {
-    try {
-      let query = supabase.from('payrolls').select('*').eq('month', selectedMonth).eq('period', selectedPeriod);
-      if (selectedBranch?.id) query = query.eq('shop_id', selectedBranch.id);
+    if (!selectedBranch?.id) {
+      setPaidRecords({});
+      return;
+    }
 
-      const { data, error } = await query;
+    try {
+      const { data, error } = await supabase
+        .from('payrolls')
+        .select('*')
+        .eq('month', selectedMonth)
+        .eq('period', selectedPeriod)
+        .eq('shop_id', selectedBranch.id);
+
       if (error) throw error;
 
       const recordMap = {};
@@ -90,8 +98,6 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
     }
   };
 
-
-
   const calculateLateMinutes = (entryTimeStr, shiftStartStr) => {
     if (!entryTimeStr || !shiftStartStr) return 0;
     const entryDate = new Date(entryTimeStr);
@@ -106,15 +112,22 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
   };
 
   const fetchPayrollData = async () => {
+    if (!selectedBranch?.id) {
+      setEmployees([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const { start, end } = getDateRange();
 
-      let empQuery = supabase.from('users').select('*').eq('role', 'employee');
-      if (selectedBranch?.id) {
-        empQuery = empQuery.eq('shop_id', selectedBranch.id);
-      }
-      const { data: empList, error: empErr } = await empQuery;
+      const { data: empList, error: empErr } = await supabase
+        .from('users')
+        .select('*')
+        .eq('role', 'employee')
+        .eq('shop_id', selectedBranch.id);
+
       if (empErr) throw empErr;
 
       const updatedEmps = await Promise.all(
@@ -123,6 +136,7 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
             .from('time_entries')
             .select('*')
             .eq('user_id', emp.id)
+            .eq('shop_id', selectedBranch.id)
             .gte('created_at', start.toISOString())
             .lte('created_at', end.toISOString());
 
@@ -130,6 +144,7 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
             .from('advances')
             .select('amount')
             .eq('user_id', emp.id)
+            .eq('shop_id', selectedBranch.id)
             .eq('status', 'approved')
             .gte('created_at', start.toISOString())
             .lte('created_at', end.toISOString());
@@ -214,7 +229,7 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
   };
 
   const handleConfirmPayment = async () => {
-    if (!selectedEmp) return;
+    if (!selectedEmp || !selectedBranch?.id) return;
     setIsSaving(true);
 
     try {
@@ -229,7 +244,7 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
 
       const payload = {
         user_id: selectedEmp.id,
-        shop_id: selectedBranch?.id || selectedEmp.shop_id,
+        shop_id: selectedBranch.id,
         month: selectedMonth,
         period: selectedPeriod,
         gross_amount: selectedEmp.grossSalary,
@@ -861,45 +876,45 @@ export default function AdminPayroll({ selectedBranch, onBack, onTabChange }) {
         </div>
       )}
 
-      {/* BOTTOM NAVIGATION BAR (แบบสีเขียวอ่อน Light Green) */}
-<div className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md bg-white/95 backdrop-blur-md rounded-[28px] shadow-xl border border-gray-100 p-1.5 flex justify-around items-center z-30">
-  
-  {/* หน้าแรก */}
-  <button
-    onClick={() => onTabChange && onTabChange('home')}
-    className="flex flex-col items-center py-1.5 px-4 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
-  >
-    <Home size={20} className="text-gray-400" />
-    <span className="text-[10px] mt-0.5">หน้าแรก</span>
-  </button>
+      {/* BOTTOM NAVIGATION BAR */}
+      <div className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md bg-white/95 backdrop-blur-md rounded-[28px] shadow-xl border border-gray-100 p-1.5 flex justify-around items-center z-30">
+        
+        {/* หน้าแรก */}
+        <button
+          onClick={() => onTabChange && onTabChange('home')}
+          className="flex flex-col items-center py-1.5 px-4 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <Home size={20} className="text-gray-400" />
+          <span className="text-[10px] mt-0.5">หน้าแรก</span>
+        </button>
 
-  {/* พนักงาน */}
-  <button
-    onClick={() => onTabChange && onTabChange('employees')}
-    className="flex flex-col items-center py-1.5 px-4 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
-  >
-    <Users size={20} className="text-gray-400" />
-    <span className="text-[10px] mt-0.5">พนักงาน</span>
-  </button>
+        {/* พนักงาน */}
+        <button
+          onClick={() => onTabChange && onTabChange('employees')}
+          className="flex flex-col items-center py-1.5 px-4 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <Users size={20} className="text-gray-400" />
+          <span className="text-[10px] mt-0.5">พนักงาน</span>
+        </button>
 
-  {/* เงินเดือน (Active) */}
-  <button
-    className="flex flex-col items-center py-1.5 px-4 rounded-2xl transition bg-emerald-50 text-[#15803d] font-bold cursor-pointer"
-  >
-    <Calculator size={20} className="text-[#15803d]" />
-    <span className="text-[10px] mt-0.5">เงินเดือน</span>
-  </button>
+        {/* เงินเดือน (Active) */}
+        <button
+          className="flex flex-col items-center py-1.5 px-4 rounded-2xl transition bg-emerald-50 text-[#15803d] font-bold cursor-pointer"
+        >
+          <Calculator size={20} className="text-[#15803d]" />
+          <span className="text-[10px] mt-0.5">เงินเดือน</span>
+        </button>
 
-  {/* ตั้งค่า */}
-  <button
-    onClick={() => onTabChange && onTabChange('settings')}
-    className="flex flex-col items-center py-1.5 px-4 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
-  >
-    <Settings size={20} className="text-gray-400" />
-    <span className="text-[10px] mt-0.5">ตั้งค่า</span>
-  </button>
+        {/* ตั้งค่า */}
+        <button
+          onClick={() => onTabChange && onTabChange('settings')}
+          className="flex flex-col items-center py-1.5 px-4 rounded-2xl transition text-gray-400 hover:text-gray-600 cursor-pointer"
+        >
+          <Settings size={20} className="text-gray-400" />
+          <span className="text-[10px] mt-0.5">ตั้งค่า</span>
+        </button>
 
-</div>
+      </div>
     </div>
   );
 }

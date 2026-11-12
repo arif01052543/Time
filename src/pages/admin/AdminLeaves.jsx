@@ -17,9 +17,15 @@ export default function AdminLeaves({ selectedBranch, onBack, onTabChange }) {
   }, [selectedBranch]);
 
   const fetchLeaves = async () => {
+    if (!selectedBranch?.id) {
+      setLeaves([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('leaves')
         .select(`
           *,
@@ -29,13 +35,9 @@ export default function AdminLeaves({ selectedBranch, onBack, onTabChange }) {
             avatar_url
           )
         `)
+        .eq('shop_id', selectedBranch.id)
         .order('created_at', { ascending: false });
 
-      if (selectedBranch?.id) {
-        query = query.eq('shop_id', selectedBranch.id);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
       setLeaves(data || []);
     } catch (err) {
@@ -47,6 +49,7 @@ export default function AdminLeaves({ selectedBranch, onBack, onTabChange }) {
 
   // อัปเดตสถานะ (อนุมัติ / ปฏิเสธ)
   const handleUpdateStatus = async (id, newStatus) => {
+    if (!selectedBranch?.id) return;
     try {
       const { error } = await supabase
         .from('leaves')
@@ -54,7 +57,8 @@ export default function AdminLeaves({ selectedBranch, onBack, onTabChange }) {
           status: newStatus,
           updated_at: new Date().toISOString()
         })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('shop_id', selectedBranch.id);
 
       if (error) throw error;
 

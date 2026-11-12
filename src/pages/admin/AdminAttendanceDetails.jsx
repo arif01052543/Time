@@ -43,6 +43,7 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
         .from('time_entries')
         .select('*')
         .gte('created_at', startOfDay.toISOString());
+      if (shopId) timeQuery = timeQuery.eq('shop_id', shopId);
 
       const { data: timeEntries, error: timeErr } = await timeQuery;
       if (timeErr) throw timeErr;
@@ -54,6 +55,7 @@ export default function AdminAttendanceDetails({ selectedBranch, onBack, onTabCh
         .eq('status', 'approved')
         .lte('start_date', endOfDay.toISOString())
         .gte('end_date', startOfDay.toISOString());
+      if (shopId) leaveQuery = leaveQuery.eq('shop_id', shopId);
 
       const { data: leaveEntries } = await leaveQuery;
 
