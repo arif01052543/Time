@@ -3,14 +3,15 @@ import { supabase } from '../../services/supabaseClient';
 import { 
   ArrowLeft, UserPlus, Briefcase, Clock, 
   Edit3, Trash2, X, Save, CreditCard,
-  UserCheck, UserX, Image,
+  UserCheck, UserX, Image, Link2, Check,
   Home, Users, Calculator, Settings 
 } from 'lucide-react';
 
 export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) {
   const [employees, setEmployees] = useState([]);
-  const [filterType, setFilterType] = useState('pending'); // 'pending', 'full_time', 'part_time'
+  const [filterType, setFilterType] = useState('pending');
   const [loading, setLoading] = useState(true);
+  const [copiedLink, setCopiedLink] = useState(false);
   
   const [showModal, setShowModal] = useState(false);
   const [editingEmp, setEditingEmp] = useState(null);
@@ -64,6 +65,15 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
     }
   };
 
+  // คัดลอกลิงก์สมัครพนักงานเฉพาะสาขานี้
+  const handleCopyInviteLink = () => {
+    if (!selectedBranch?.id) return;
+    const inviteUrl = `${window.location.origin}/?shop=${selectedBranch.id}`;
+    navigator.clipboard.writeText(inviteUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 3000);
+  };
+
   const handleOpenAddModal = () => {
     setEditingEmp(null);
     setFormData(emptyForm);
@@ -113,7 +123,6 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
     try {
       const cleanPin = formData.pin_code.trim();
 
-      // เช็กรหัส PIN ซ้ำทั้งตาราง users (ไม่กรอง shop_id เพื่อป้องกัน PIN ชนกันข้ามร้าน)
       let pinCheckQuery = supabase
         .from('users')
         .select('id')
@@ -209,7 +218,7 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
       {/* ส่วนเนื้อหาหลัก สามารถ Scroll ได้ */}
       <div className="flex-1 pb-24 w-full">
         
-        {/* Header สีเขียวทรงโค้ง ขยายเต็มความกว้าง */}
+        {/* Header สีเขียวทรงโค้ง */}
         <div className="bg-[#15803d] p-5 sm:p-6 text-white rounded-b-[32px] sm:rounded-b-[40px] shadow-md sticky top-0 z-20 w-full">
           <div className="max-w-3xl mx-auto flex justify-between items-center">
             <div className="flex items-center space-x-3">
@@ -240,6 +249,32 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
         {/* รายชื่อพนักงาน และ ฟิลเตอร์ */}
         <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-4">
           
+          {/* แถบคัดลอกลิงก์สมัครพนักงานเฉพาะสาขา */}
+          {selectedBranch?.id && (
+            <div className="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-sm">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-bold text-emerald-900">
+                  ลิงก์ลงทะเบียนพนักงานใหม่ (เฉพาะสาขานี้)
+                </p>
+                <p className="text-[11px] text-emerald-700 truncate font-mono mt-0.5">
+                  รหัสร้าน: {selectedBranch.id}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyInviteLink}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 shrink-0 transition active:scale-95 cursor-pointer shadow-sm ${
+                  copiedLink
+                    ? 'bg-emerald-700 text-white'
+                    : 'bg-[#15803d] hover:bg-emerald-800 text-white'
+                }`}
+              >
+                {copiedLink ? <Check size={15} /> : <Link2 size={15} />}
+                <span>{copiedLink ? 'คัดลอกลิงก์แล้ว' : 'คัดลอกลิงก์ส่งพนักงาน'}</span>
+              </button>
+            </div>
+          )}
+
           {/* Filter Tabs 3 หมวด */}
           <div className="grid grid-cols-3 gap-1.5 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm text-center">
             <button
@@ -608,7 +643,7 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
         </div>
       )}
 
-      {/* Bottom Navigation Bar จัดกลางตามทุกขนาดหน้าจอ */}
+      {/* Bottom Navigation Bar */}
       <div className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md bg-white/95 backdrop-blur-md rounded-[28px] shadow-xl border border-gray-100 p-1.5 flex justify-around items-center z-30">
         <button
           onClick={() => onTabChange ? onTabChange('home') : onBack()}

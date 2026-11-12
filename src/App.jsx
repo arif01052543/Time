@@ -1,37 +1,70 @@
 import React, { useState } from 'react';
 import EmployeeLogin from './pages/employee/EmployeeLogin';
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
+import EmployeeRegister from './pages/employee/EmployeeRegister';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import BranchSelect from './pages/BranchSelect';
 
 export default function App() {
+  // ตรวจสอบว่าเข้าเว็บผ่านลิงก์สมัครพนักงานของร้าน (?shop=...) หรือไม่
+  const [urlShopId, setUrlShopId] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('shop') || '';
+  });
+
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedBranch, setSelectedBranch] = useState(null);
-  const [viewState, setViewState] = useState('employee-login'); 
-  // 'employee-login', 'admin-login', 'branch-select', 'employee-dashboard', 'admin-dashboard'
+  const [viewState, setViewState] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('shop') ? 'employee-register' : 'employee-login';
+  });
 
-  // 1. หน้าล็อกอินเจ้าของร้าน (Admin Login)
+  const clearShopUrlParam = () => {
+    if (window.location.search) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    setUrlShopId('');
+  };
+
+  // 1. หน้าลงทะเบียนพนักงานใหม่ (เมื่อเปิดผ่านลิงก์เฉพาะร้าน ?shop=...)
+  if (viewState === 'employee-register') {
+    return (
+      <EmployeeRegister
+        initialShopId={urlShopId}
+        onBack={() => {
+          clearShopUrlParam();
+          setViewState('employee-login');
+        }}
+        onRegisterSuccess={() => {
+          clearShopUrlParam();
+          setViewState('employee-login');
+        }}
+      />
+    );
+  }
+
+  // 2. หน้าล็อกอินเจ้าของร้าน (Admin Login)
   if (viewState === 'admin-login') {
     return (
       <AdminLogin
         onLoginSuccess={(user) => {
           setCurrentUser(user);
-          setViewState('branch-select'); // เมื่อล็อกอินผ่าน ให้ไปเลือกสาขา
+          setViewState('branch-select');
         }}
         onSwitchToEmployee={() => setViewState('employee-login')}
       />
     );
   }
 
-  // 2. หน้าเลือกสาขา (Branch Selection)
+  // 3. หน้าเลือกสาขา (Branch Selection)
   if (viewState === 'branch-select') {
     return (
       <BranchSelect
         currentUser={currentUser}
         onSelectBranch={(branch) => {
           setSelectedBranch(branch);
-          setViewState('admin-dashboard'); // เมื่อเลือกสาขาเสร็จ ไปหน้า Dashboard แอดมิน
+          setViewState('admin-dashboard');
         }}
         onLogout={() => {
           setCurrentUser(null);
@@ -41,7 +74,7 @@ export default function App() {
     );
   }
 
-  // 3. หน้าแอดมิน Dashboard
+  // 4. หน้าแอดมิน Dashboard
   if (viewState === 'admin-dashboard') {
     return (
       <AdminDashboard
@@ -56,7 +89,7 @@ export default function App() {
     );
   }
 
-  // 4. ถ้าพนักงานล็อกอินแล้ว ให้แสดงหน้าลงเวลา
+  // 5. ถ้าพนักงานล็อกอินแล้ว ให้แสดงหน้าลงเวลา
   if (currentUser && viewState === 'employee-dashboard') {
     return (
       <EmployeeDashboard
@@ -69,7 +102,7 @@ export default function App() {
     );
   }
 
-  // 5. หน้าล็อกอินพนักงาน (Default)
+  // 6. หน้าล็อกอินพนักงาน (Default)
   return (
     <EmployeeLogin
       onLoginSuccess={(user) => {

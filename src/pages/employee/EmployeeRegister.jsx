@@ -2,13 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabaseClient';
 import { 
   ArrowLeft, User, CreditCard, QrCode, 
-  CheckCircle2, UserPlus, Upload, Clock, LogIn
+  CheckCircle2, UserPlus, Upload, Clock, LogIn, Store, Lock, Search
 } from 'lucide-react';
 
-export default function EmployeeRegister({ onBack, onRegisterSuccess }) {
-  const [branches, setBranches] = useState([]);
+export default function EmployeeRegister({ initialShopId, onBack, onRegisterSuccess }) {
+  const [lockedShop, setLockedShop] = useState(null);
+  const [shopCodeInput, setShopCodeInput] = useState('');
+  const [shopLoading, setShopLoading] = useState(false);
+  const [shopError, setShopError] = useState('');
+
   const [loading, setLoading] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false); // State ควบคุมหน้าส่งคำขอสำเร็จ
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -23,20 +27,51 @@ export default function EmployeeRegister({ onBack, onRegisterSuccess }) {
     avatar_url: ''
   });
 
+  // ตรวจสอบ shop_id จาก props หรือ URL (?shop=...)
   useEffect(() => {
-    fetchBranches();
-  }, []);
+    const params = new URLSearchParams(window.location.search);
+    const targetShopId = initialShopId || params.get('shop');
+    if (targetShopId) {
+      fetchSingleShop(targetShopId, true);
+    }
+  }, [initialShopId]);
 
-  const fetchBranches = async () => {
+  // ดึงข้อมูลเฉพาะร้านเดียวตาม ID (ไม่ดึงร้านอื่นในระบบ)
+  const fetchSingleShop = async (shopIdToFind, isFromLink = false) => {
+    const cleanId = String(shopIdToFind || '').trim();
+    if (!cleanId) {
+      setShopError('กรุณากรอกรหัสร้าน');
+      return;
+    }
+
+    setShopLoading(true);
+    setShopError('');
     try {
-      const { data, error } = await supabase.from('shops').select('*');
-      if (error) throw error;
-      setBranches(data || []);
-      if (data && data.length > 0) {
-        setFormData(prev => ({ ...prev, shop_id: data[0].id }));
+      const { data, error } = await supabase
+        .from('shops')
+        .select('id, shop_name, default_work_start, default_work_end, default_off_day')
+        .eq('id', cleanId)
+        .single();
+
+      if (error || !data) {
+        setLockedShop(null);
+        setFormData(prev => ({ ...prev, shop_id: '' }));
+        setShopError(
+          isFromLink
+            ? 'ลิงก์สมัครไม่ถูกต้อง หรือไม่พบร้านค้านี้ในระบบ'
+            : 'ไม่พบรหัสร้านนี้ กรุณาตรวจสอบกับเจ้าของร้านอีกครั้ง'
+        );
+        return;
       }
+
+      setLockedShop(data);
+      setFormData(prev => ({ ...prev, shop_id: data.id }));
     } catch (err) {
-      console.error('Error fetching branches:', err);
+      setLockedShop(null);
+      setFormData(prev => ({ ...prev, shop_id: '' }));
+      setShopError('ไม่พบรหัสร้านนี้ในระบบ');
+    } finally {
+      setShopLoading(false);
     }
   };
 
@@ -53,27 +88,43 @@ export default function EmployeeRegister({ onBack, onRegisterSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.shop_id) {
-      alert('กรุณาเลือกร้านที่ทำงานหรือสาขา');
+    if (!lockedShop || !formData.shop_id) {
+      alert('กรุณาระบุรหัสร้านและกดตรวจสอบร้านก่อนลงทะเบียน');
       return;
     }
-    if (formData.pin_code.length !== 4) {
+
+    const cleanPin = formData.pin_code.trim();
+    if (cleanPin.length !== 4) {
       alert('กรุณากรอกรหัส PIN ให้ครบ 4 หลัก');
       return;
     }
 
     setLoading(true);
     try {
-      const selectedBranch = branches.find(b => String(b.id) === String(formData.shop_id));
-      const defaultStart = selectedBranch?.default_work_start || '16:00';
-      const defaultEnd = selectedBranch?.default_work_end || '00:00';
-      const defaultOff = selectedBranch?.default_off_day || 'วันพุธ';
+      // เช็กรหัส PIN ซ้ำทั้งระบบ เพื่อกันล็อกอินชนกันข้ามร้าน
+      const { data: dupPin, error: pinErr } = await supabase
+        .from('users')
+        .select('id')
+        .eq('pin_code', cleanPin);
+
+      if (pinErr) throw pinErr;
+      if (dupPin && dupPin.length > 0) {
+        alert(`รหัส PIN "${cleanPin}" ถูกใช้งานแล้ว กรุณาตั้งรหัส 4 หลักอื่น`);
+        setLoading(false);
+        return;
+      }
+
+      const defaultStart = lockedShop?.default_work_start || '16:00';
+      const defaultEnd = lockedShop?.default_work_end || '00:00';
+      const defaultOff = lockedShop?.default_off_day || 'ไม่มีวันหยุด';
 
       const payload = {
         ...formData,
-        id_card_last4: formData.pin_code,
+        pin_code: cleanPin,
+        shop_id: lockedShop.id,
+        id_card_last4: cleanPin,
         role: 'employee',
-        status: 'pending', // ส่งคำขอไปที่แอดมินก่อน
+        status: 'pending',
         salary_rate: 0,
         late_penalty_rate: 0,
         work_start: defaultStart,
@@ -84,7 +135,7 @@ export default function EmployeeRegister({ onBack, onRegisterSuccess }) {
       const { error } = await supabase.from('users').insert([payload]);
       if (error) throw error;
 
-      setIsSubmitted(true); // แสดงหน้าส่งคำขอสำเร็จ
+      setIsSubmitted(true);
     } catch (err) {
       alert('เกิดข้อผิดพลาดในการลงทะเบียน: ' + err.message);
     } finally {
@@ -106,7 +157,7 @@ export default function EmployeeRegister({ onBack, onRegisterSuccess }) {
             <div className="space-y-1.5">
               <h2 className="text-lg sm:text-2xl font-extrabold text-gray-800">ส่งคำขอลงทะเบียนสำเร็จ!</h2>
               <p className="text-xs sm:text-sm text-gray-500 max-w-xs mx-auto leading-relaxed">
-                ข้อมูลของคุณถูกส่งไปยังแอดมินเรียบร้อยแล้ว กรุณารอแอดมินหรือเจ้าของร้านอนุมัติเข้าสู่ระบบ
+                ข้อมูลของคุณถูกส่งไปยังร้าน <strong className="text-emerald-700">{lockedShop?.shop_name}</strong> เรียบร้อยแล้ว กรุณารอแอดมินอนุมัติเข้าสู่ระบบ
               </p>
             </div>
 
@@ -158,22 +209,57 @@ export default function EmployeeRegister({ onBack, onRegisterSuccess }) {
                   <span>ข้อมูลส่วนตัว</span>
                 </div>
 
+                {/* ส่วนแสดงชื่อร้านที่ล็อกไว้ หรือ ช่องกรอกรหัสร้าน */}
                 <div className="min-w-0">
-                  <label className="font-bold text-gray-700 block mb-1 truncate text-xs sm:text-sm">ร้านที่ทำงาน/สาขา</label>
-                  <select
-                    value={formData.shop_id}
-                    onChange={(e) => setFormData({ ...formData, shop_id: e.target.value })}
-                    className="w-full min-w-0 block p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-medium text-xs sm:text-sm text-gray-800 truncate cursor-pointer box-border"
-                    required
-                  >
-                    {branches.length === 0 ? (
-                      <option value="">กำลังโหลดสาขา...</option>
-                    ) : (
-                      branches.map(b => (
-                        <option key={b.id} value={b.id}>{b.shop_name}</option>
-                      ))
-                    )}
-                  </select>
+                  <label className="font-bold text-gray-700 block mb-1 truncate text-xs sm:text-sm">
+                    ร้านที่ทำงาน/สาขา
+                  </label>
+
+                  {shopLoading ? (
+                    <div className="p-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-500 text-xs sm:text-sm">
+                      กำลังตรวจสอบข้อมูลร้าน...
+                    </div>
+                  ) : lockedShop ? (
+                    <div className="p-3 sm:p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                      <div className="flex items-center space-x-2.5 min-w-0">
+                        <Store size={18} className="text-[#15803d] shrink-0" />
+                        <span className="font-bold text-emerald-900 text-xs sm:text-sm truncate">
+                          {lockedShop.shop_name}
+                        </span>
+                      </div>
+                      <span className="text-[10px] sm:text-xs bg-white text-emerald-700 px-2.5 py-1 rounded-lg font-bold border border-emerald-200 flex items-center space-x-1 shrink-0">
+                        <Lock size={11} />
+                        <span>ล็อกสาขาแล้ว</span>
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={shopCodeInput}
+                          onChange={(e) => setShopCodeInput(e.target.value)}
+                          placeholder="กรอกรหัสร้านที่ได้รับจากแอดมิน"
+                          className="flex-1 min-w-0 p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fetchSingleShop(shopCodeInput, false)}
+                          className="px-4 py-2.5 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center space-x-1 shrink-0 cursor-pointer transition"
+                        >
+                          <Search size={15} />
+                          <span>ตรวจสอบ</span>
+                        </button>
+                      </div>
+                      {shopError ? (
+                        <p className="text-[11px] text-red-600 font-medium">{shopError}</p>
+                      ) : (
+                        <p className="text-[11px] text-gray-400">
+                          * แนะนำให้เข้าผ่านลิงก์หรือสแกน QR Code จากเจ้าของร้านเพื่อระบุสาขาอัตโนมัติ
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="min-w-0">
@@ -188,10 +274,10 @@ export default function EmployeeRegister({ onBack, onRegisterSuccess }) {
                   />
                 </div>
 
-                {/* Grid 2 คอลัมน์ ล็อกไม่ให้ขยายล้นกรอบ */}
+                {/* Grid 2 คอลัมน์ */}
                 <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full box-border">
                   <div className="min-w-0 overflow-hidden">
-                    <label className="font-bold text-gray-700 block mb-1 text-xs sm:text-sm truncate">เลขบัตรประชาชน 4 ตัวท้าย</label>
+                    <label className="font-bold text-gray-700 block mb-1 text-xs sm:text-sm truncate">ตั้งรหัส PIN (4 หลัก)</label>
                     <input
                       type="password"
                       maxLength={4}
@@ -259,7 +345,6 @@ export default function EmployeeRegister({ onBack, onRegisterSuccess }) {
                   <span className="truncate">ข้อมูลบัญชีรับเงิน & QR Code</span>
                 </div>
 
-                {/* Grid 2 คอลัมน์ ล็อกไม่ให้ขยายล้นกรอบ */}
                 <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full box-border">
                   <div className="min-w-0 overflow-hidden">
                     <label className="font-bold text-gray-700 block mb-1 text-xs sm:text-sm truncate">ธนาคาร</label>
@@ -327,8 +412,8 @@ export default function EmployeeRegister({ onBack, onRegisterSuccess }) {
               {/* ปุ่มส่งคำขอลงทะเบียน */}
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full py-3.5 sm:py-4 bg-[#15803d] hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-lg transition text-xs sm:text-sm flex items-center justify-center space-x-2 active:scale-[0.98] cursor-pointer"
+                disabled={loading || !lockedShop}
+                className="w-full py-3.5 sm:py-4 bg-[#15803d] hover:bg-emerald-800 disabled:bg-gray-400 text-white font-bold rounded-2xl shadow-lg transition text-xs sm:text-sm flex items-center justify-center space-x-2 active:scale-[0.98] cursor-pointer"
               >
                 <UserPlus size={18} className="shrink-0" />
                 <span>{loading ? 'กำลังส่งคำขอ...' : 'ส่งคำขอลงทะเบียน'}</span>
