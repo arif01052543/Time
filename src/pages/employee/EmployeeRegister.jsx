@@ -187,7 +187,7 @@ export default function EmployeeRegister({ onBack, onRegisterSuccess }) {
                 {/* Grid 2 คอลัมน์ ล็อกไม่ให้ขยายล้นกรอบ */}
                 <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full box-border">
                   <div className="min-w-0 overflow-hidden">
-                    <label className="font-bold text-gray-700 block mb-1 text-xs sm:text-sm truncate">PIN เข้างาน (4 หลัก)</label>
+                    <label className="font-bold text-gray-700 block mb-1 text-xs sm:text-sm truncate">เลขบัตรประชาชน 4 ตัวท้าย</label>
                     <input
                       type="password"
                       maxLength={4}
