@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import EmployeeLogin from './pages/employee/EmployeeLogin';
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import EmployeeRegister from './pages/employee/EmployeeRegister';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import BranchSelect from './pages/BranchSelect';
+import { setActiveShopId } from './services/supabaseClient';
 
 export default function App() {
   // ตรวจสอบว่าเข้าเว็บผ่านลิงก์สมัครพนักงานของร้าน (?shop=...) หรือไม่
@@ -20,11 +21,22 @@ export default function App() {
     return params.get('shop') ? 'employee-register' : 'employee-login';
   });
 
+  // ซิงค์รหัสร้านเข้า Header ของ Supabase อัตโนมัติตามสถานะปัจจุบัน
+  useEffect(() => {
+    const activeId =
+      selectedBranch?.id ||
+      currentUser?.shop_id ||
+      urlShopId ||
+      '';
+    setActiveShopId(activeId);
+  }, [selectedBranch, currentUser, urlShopId]);
+
   const clearShopUrlParam = () => {
     if (window.location.search) {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
     setUrlShopId('');
+    setActiveShopId('');
   };
 
   // 1. หน้าลงทะเบียนพนักงานใหม่ (เมื่อเปิดผ่านลิงก์เฉพาะร้าน ?shop=...)
@@ -50,6 +62,7 @@ export default function App() {
       <AdminLogin
         onLoginSuccess={(user) => {
           setCurrentUser(user);
+          if (user?.shop_id) setActiveShopId(user.shop_id);
           setViewState('branch-select');
         }}
         onSwitchToEmployee={() => setViewState('employee-login')}
@@ -64,10 +77,12 @@ export default function App() {
         currentUser={currentUser}
         onSelectBranch={(branch) => {
           setSelectedBranch(branch);
+          setActiveShopId(branch?.id || '');
           setViewState('admin-dashboard');
         }}
         onLogout={() => {
           setCurrentUser(null);
+          setActiveShopId('');
           setViewState('employee-login');
         }}
       />
@@ -83,6 +98,7 @@ export default function App() {
         onLogout={() => {
           setCurrentUser(null);
           setSelectedBranch(null);
+          setActiveShopId('');
           setViewState('employee-login');
         }}
       />
@@ -96,6 +112,7 @@ export default function App() {
         currentUser={currentUser}
         onLogout={() => {
           setCurrentUser(null);
+          setActiveShopId('');
           setViewState('employee-login');
         }}
       />
@@ -107,6 +124,7 @@ export default function App() {
     <EmployeeLogin
       onLoginSuccess={(user) => {
         setCurrentUser(user);
+        if (user?.shop_id) setActiveShopId(user.shop_id);
         setViewState('employee-dashboard');
       }}
       onSwitchToAdmin={() => setViewState('admin-login')}

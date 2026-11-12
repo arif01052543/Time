@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../services/supabaseClient';
+import { supabase, setActiveShopId } from '../../services/supabaseClient';
 import { 
   ArrowLeft, User, CreditCard, QrCode, 
   CheckCircle2, UserPlus, Upload, Clock, LogIn, Store, Lock, Search
@@ -55,6 +55,7 @@ export default function EmployeeRegister({ initialShopId, onBack, onRegisterSucc
 
     setShopLoading(true);
     setShopError('');
+    setActiveShopId(cleanId);
     try {
       const { data, error } = await supabase
         .from('shops')
@@ -248,7 +249,7 @@ export default function EmployeeRegister({ initialShopId, onBack, onRegisterSucc
                           type="text"
                           value={shopCodeInput}
                           onChange={(e) => setShopCodeInput(e.target.value)}
-                          placeholder="กรอกรหัสร้าน หรือ วางลิงก์ที่ได้รับจากแอดมิน"
+                          placeholder="วางลิงก์ที่ได้รับจากแอดมิน"
                           className="flex-1 min-w-0 p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-mono"
                         />
                         <button
