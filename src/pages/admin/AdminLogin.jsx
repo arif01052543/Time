@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, Shield, Users, User, Lock, LogIn } from 'lucide-react';
-import { supabase } from '../../services/supabaseClient';
+import { supabase, setActiveShopId } from '../../services/supabaseClient';
 
 export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
   const [username, setUsername] = useState('');
@@ -8,10 +8,15 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  useEffect(() => {
+    setActiveShopId(''); // เคลียร์รหัสร้านค้างในเครื่องก่อนล็อกอินใหม่เสมอ
+  }, []);
+
   const handleAdminLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg('');
+    setActiveShopId(''); // เคลียร์ค่าก่อนค้นหาบัญชี
 
     try {
       const cleanUsername = username.trim();
@@ -26,8 +31,6 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
         .in('role', ['admin', 'owner'])
         .maybeSingle();
 
-      console.log('User query result:', { userData, userError });
-
       if (userError) {
         throw new Error(`[Database Error] ${userError.message}`);
       }
@@ -36,6 +39,11 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
         setErrorMsg('ไม่พบบัญชีผู้ใช้ หรือ PIN ไม่ถูกต้อง');
         setLoading(false);
         return;
+      }
+
+      // ตั้งค่ารหัสร้านหลักเริ่มต้นทันทีที่ล็อกอินสำเร็จ
+      if (userData.shop_id) {
+        setActiveShopId(userData.shop_id);
       }
 
       // 2. ดึงข้อมูลร้านค้าเพิ่มเติม
@@ -59,7 +67,6 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
         shops: shopData
       };
 
-      console.log('Login Successful:', fullUserData);
       onLoginSuccess(fullUserData);
 
     } catch (err) {
@@ -98,7 +105,7 @@ export default function AdminLogin({ onLoginSuccess, onSwitchToEmployee }) {
         </div>
       </div>
 
-      {/* Form ฟอร์มตรงกลาง ขยายตามขนาดหน้าจออย่างสมดุล (ไม่มีกรอบซ้อน) */}
+      {/* Form ฟอร์มตรงกลาง ขยายตามขนาดหน้าจออย่างสมดุล */}
       <div className="w-full max-w-md mx-auto px-6 py-8 sm:py-12 flex-1 flex flex-col justify-center">
         <h2 className="text-center font-bold text-gray-800 text-xl sm:text-2xl mb-6">เข้าสู่ระบบ</h2>
 

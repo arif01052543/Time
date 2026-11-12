@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../services/supabaseClient';
+import { supabase, setActiveShopId } from '../../services/supabaseClient';
 import { 
   ArrowLeft, UserPlus, Briefcase, Clock, 
   Edit3, Trash2, X, Save, CreditCard,
@@ -37,6 +37,9 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
   const [formData, setFormData] = useState(emptyForm);
 
   useEffect(() => {
+    if (selectedBranch?.id) {
+      setActiveShopId(selectedBranch.id);
+    }
     fetchEmployees();
   }, [selectedBranch]);
 
@@ -120,6 +123,8 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
       return;
     }
 
+    setActiveShopId(selectedBranch.id);
+
     try {
       const cleanPin = formData.pin_code.trim();
 
@@ -175,6 +180,7 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
   const handleReject = async (id, name) => {
     if (!confirm(`คุณต้องการปฏิเสธคำขอลงทะเบียนของ "${name}" ใช่หรือไม่?`)) return;
     try {
+      setActiveShopId(selectedBranch.id);
       const { error } = await supabase
         .from('users')
         .update({ status: 'rejected' })
@@ -191,6 +197,7 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
   const handleDelete = async (id, name) => {
     if (!confirm(`คุณต้องการลบพนักงาน "${name}" ออกจากระบบใช่หรือไม่?`)) return;
     try {
+      setActiveShopId(selectedBranch.id);
       const { error } = await supabase
         .from('users')
         .delete()

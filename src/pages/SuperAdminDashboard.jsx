@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { supabase } from '../services/supabaseClient';
+import React, { useState, useEffect } from 'react';
+import { supabase, setActiveShopId } from '../services/supabaseClient';
 import {
   ShieldCheck, Store, UserPlus, Lock, Unlock, Copy, Check,
-  LogOut, Calendar, Users, RefreshCw, KeyRound
+  LogOut, Calendar, Users, RefreshCw, KeyRound, Plus, X
 } from 'lucide-react';
 
 export default function SuperAdminDashboard({ onBack }) {
@@ -22,8 +22,18 @@ export default function SuperAdminDashboard({ onBack }) {
   });
   const [creating, setCreating] = useState(false);
 
+  // State สำหรับเพิ่มสาขาให้ลูกค้าเดิม
+  const [branchModalShop, setBranchModalShop] = useState(null);
+  const [newBranchName, setNewBranchName] = useState('');
+  const [addingBranch, setAddingBranch] = useState(false);
+
+  useEffect(() => {
+    setActiveShopId(''); // เคลียร์รหัสร้านค้างในเครื่องทุกครั้งที่เข้าหน้า Super Admin
+  }, []);
+
   const fetchTenants = async (keyToUse = masterKey) => {
     setLoading(true);
+    setActiveShopId('');
     try {
       const { data, error } = await supabase.rpc('super_get_tenants', {
         p_master_key: keyToUse.trim()
@@ -52,6 +62,7 @@ export default function SuperAdminDashboard({ onBack }) {
       return;
     }
     setCreating(true);
+    setActiveShopId('');
     try {
       const { data, error } = await supabase.rpc('super_create_tenant', {
         p_master_key: masterKey.trim(),
@@ -76,6 +87,97 @@ export default function SuperAdminDashboard({ onBack }) {
       alert('เกิดข้อผิดพลาด: ' + err.message);
     } finally {
       setCreating(false);
+    }
+  };
+
+  // เปิดหน้าต่างเพิ่มสาขาให้ลูกค้าเดิม
+  const openAddBranchModal = (shop) => {
+    setBranchModalShop(shop);
+    setNewBranchName(`${shop.shop_name} สาขา 2`);
+  };
+
+  // บันทึกสาขาใหม่ผูกกับเจ้าของร้านคนเดิม
+  const handleAddBranch = async (e) => {
+    e.preventDefault();
+    if (!branchModalShop || !newBranchName.trim()) return;
+
+    setAddingBranch(true);
+    setActiveShopId('');
+    try {
+      // 1. ค้นหาบัญชีเจ้าของร้าน (admin/owner) ของร้านต้นทาง
+      let ownerUser = null;
+      const { data: directAdmins, error: adminErr } = await supabase
+        .from('users')
+        .select('id, max_branches, shop_id')
+        .eq('shop_id', branchModalShop.shop_id)
+        .in('role', ['admin', 'owner'])
+        .limit(1);
+
+      if (adminErr) throw adminErr;
+
+      if (directAdmins && directAdmins.length > 0) {
+        ownerUser = directAdmins[0];
+      } else {
+        // กรณีกดเพิ่มจากสาขาย่อย ให้ตามหาเจ้าของจากคอลัมน์ owner_id
+        const { data: shopRow } = await supabase
+          .from('shops')
+          .select('owner_id')
+          .eq('id', branchModalShop.shop_id)
+          .maybeSingle();
+
+        if (shopRow?.owner_id) {
+          const { data: linkedOwner } = await supabase
+            .from('users')
+            .select('id, max_branches, shop_id')
+            .eq('id', shopRow.owner_id)
+            .maybeSingle();
+          ownerUser = linkedOwner;
+        }
+      }
+
+      if (!ownerUser) {
+        throw new Error('ไม่พบบัญชีเจ้าของร้านต้นทาง กรุณาตรวจสอบข้อมูลแอดมิน');
+      }
+
+      // 2. อัปเดตสาขาหลักให้มี owner_id ตรงกัน (กันกรณีสาขาเก่ายังไม่มี owner_id)
+      await supabase
+        .from('shops')
+        .update({ owner_id: ownerUser.id })
+        .eq('id', branchModalShop.shop_id)
+        .is('owner_id', null);
+
+      // 3. สร้างสาขาใหม่ผูกกับ owner_id เดียวกัน
+      const { error: insertErr } = await supabase
+        .from('shops')
+        .insert([{
+          shop_name: newBranchName.trim(),
+          owner_id: ownerUser.id,
+          subscription_status: branchModalShop.subscription_status || 'active',
+          expire_date: branchModalShop.expire_date || null
+        }]);
+
+      if (insertErr) throw insertErr;
+
+      // 4. นับจำนวนสาขาทั้งหมดของเจ้าของคนนี้ และอัปเดตโควต้า max_branches ให้อัตโนมัติ
+      const { count } = await supabase
+        .from('shops')
+        .select('id', { count: 'exact', head: true })
+        .or(`owner_id.eq.${ownerUser.id},id.eq.${ownerUser.shop_id}`);
+
+      const updatedQuota = Math.max((ownerUser.max_branches || 1) + 1, count || 2);
+      await supabase
+        .from('users')
+        .update({ max_branches: updatedQuota })
+        .eq('id', ownerUser.id);
+
+      alert(`เพิ่มสาขา "${newBranchName.trim()}" เรียบร้อยแล้ว!\nเจ้าของร้านสามารถล็อกอินด้วย PIN เดิมเพื่อเลือกสาขาได้ทันที`);
+      setBranchModalShop(null);
+      setNewBranchName('');
+      fetchTenants();
+    } catch (err) {
+      alert('เพิ่มสาขาไม่สำเร็จ: ' + err.message);
+    } finally {
+      setAddingBranch(false);
     }
   };
 
@@ -257,7 +359,7 @@ export default function SuperAdminDashboard({ onBack }) {
         {/* รายชื่อร้านลูกค้าทั้งหมด */}
         <div className="space-y-3">
           <h3 className="font-extrabold text-gray-700 text-sm px-1">
-            รายชื่อลูกค้าทั้งหมด ({tenants.length} ร้าน)
+            รายชื่อลูกค้าทั้งหมด ({tenants.length} ร้าน/สาขา)
           </h3>
 
           {tenants.map((shop) => {
@@ -270,7 +372,7 @@ export default function SuperAdminDashboard({ onBack }) {
                 }`}
               >
                 <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center flex-wrap gap-2">
                     <Store size={18} className={isActive ? 'text-emerald-600' : 'text-red-500'} />
                     <span className="font-extrabold text-gray-800 text-sm sm:text-base">{shop.shop_name}</span>
                     <span
@@ -280,10 +382,19 @@ export default function SuperAdminDashboard({ onBack }) {
                     >
                       {isActive ? 'ใช้งานปกติ' : 'ระงับการใช้งาน'}
                     </span>
+                    {!shop.admin_name && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                        สาขาเพิ่มเติม
+                      </span>
+                    )}
                   </div>
 
                   <div className="text-xs text-gray-500 flex flex-wrap gap-x-4 gap-y-1">
-                    <span>แอดมิน: <strong className="text-gray-700">{shop.admin_name || '-'}</strong> (PIN: <strong className="font-mono text-emerald-700">{shop.admin_pin || '-'}</strong>)</span>
+                    {shop.admin_name ? (
+                      <span>แอดมิน: <strong className="text-gray-700">{shop.admin_name}</strong> (PIN: <strong className="font-mono text-emerald-700">{shop.admin_pin || '-'}</strong>)</span>
+                    ) : (
+                      <span className="text-blue-700 font-medium">ใช้บัญชีเจ้าของร้านหลักในการเข้าจัดการ</span>
+                    )}
                     <span className="flex items-center space-x-1">
                       <Users size={13} />
                       <span>พนักงาน {shop.employee_count} คน</span>
@@ -297,7 +408,15 @@ export default function SuperAdminDashboard({ onBack }) {
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => openAddBranchModal(shop)}
+                    className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold flex items-center space-x-1 transition cursor-pointer"
+                  >
+                    <Plus size={14} />
+                    <span>เพิ่มสาขา</span>
+                  </button>
+
                   <button
                     onClick={() => handleCopyInvite(shop)}
                     className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition cursor-pointer"
@@ -323,6 +442,53 @@ export default function SuperAdminDashboard({ onBack }) {
           })}
         </div>
       </div>
+
+      {/* Modal เพิ่มสาขาใหม่ให้ลูกค้าเดิม */}
+      {branchModalShop && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="font-extrabold text-gray-800 text-base flex items-center space-x-2">
+                <Store size={18} className="text-emerald-600" />
+                <span>เพิ่มสาขาใหม่ให้ลูกค้า</span>
+              </h3>
+              <button
+                onClick={() => setBranchModalShop(null)}
+                className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-500 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-xs text-emerald-800 space-y-1">
+              <p>ร้านต้นทาง: <strong>{branchModalShop.shop_name}</strong></p>
+              <p>ระบบจะผูกสาขาใหม่เข้ากับบัญชีเจ้าของร้านเดิมโดยอัตโนมัติ ลูกค้าสามารถล็อกอินด้วย PIN เดิมแล้วกดเลือกสาขาได้ทันที</p>
+            </div>
+
+            <form onSubmit={handleAddBranch} className="space-y-4 text-xs sm:text-sm">
+              <div>
+                <label className="font-bold text-gray-700 block mb-1">ชื่อสาขาใหม่ *</label>
+                <input
+                  type="text"
+                  value={newBranchName}
+                  onChange={(e) => setNewBranchName(e.target.value)}
+                  placeholder="เช่น ร้านคาเฟ่สุขใจ สาขา 2"
+                  className="w-full p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 font-semibold"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={addingBranch}
+                className="w-full py-3.5 bg-[#15803d] hover:bg-emerald-800 disabled:bg-gray-400 text-white font-bold rounded-2xl shadow-md transition cursor-pointer"
+              >
+                {addingBranch ? 'กำลังสร้างสาขา...' : 'ยืนยันเปิดสาขาใหม่'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

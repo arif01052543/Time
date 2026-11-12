@@ -64,6 +64,7 @@ export default function EmployeeRegister({ initialShopId, onBack, onRegisterSucc
         .single();
 
       if (error || !data) {
+        setActiveShopId('');
         setLockedShop(null);
         setFormData(prev => ({ ...prev, shop_id: '' }));
         setShopError(
@@ -77,6 +78,7 @@ export default function EmployeeRegister({ initialShopId, onBack, onRegisterSucc
       setLockedShop(data);
       setFormData(prev => ({ ...prev, shop_id: data.id }));
     } catch (err) {
+      setActiveShopId('');
       setLockedShop(null);
       setFormData(prev => ({ ...prev, shop_id: '' }));
       setShopError('ไม่พบรหัสร้านนี้ในระบบ');
@@ -110,6 +112,7 @@ export default function EmployeeRegister({ initialShopId, onBack, onRegisterSucc
     }
 
     setLoading(true);
+    setActiveShopId(lockedShop.id);
     try {
       // เช็กรหัส PIN ซ้ำทั้งระบบ เพื่อกันล็อกอินชนกันข้ามร้าน
       const { data: dupPin, error: pinErr } = await supabase

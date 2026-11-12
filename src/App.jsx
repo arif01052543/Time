@@ -29,10 +29,9 @@ export default function App() {
   const [checkingStatus, setCheckingStatus] = useState(false);
 
   const activeShopId =
-    selectedBranch?.id ||
-    currentUser?.shop_id ||
-    urlShopId ||
-    '';
+    viewState === 'super-admin'
+      ? ''
+      : selectedBranch?.id || currentUser?.shop_id || urlShopId || '';
 
   // ซิงค์รหัสร้านเข้า Header และตรวจสอบสถานะการชำระเงินทุกครั้งที่เปลี่ยนหน้า/รีเฟรช
   useEffect(() => {
@@ -192,6 +191,10 @@ export default function App() {
         currentUser={currentUser}
         onSelectBranch={(branch) => {
           setSelectedBranch(branch);
+          // ซิงค์ shop_id ใน currentUser ให้ตรงกับสาขาที่เลือกทุกหน้าย่อย
+          setCurrentUser((prev) =>
+            prev ? { ...prev, shop_id: branch.id, shops: branch } : prev
+          );
           setActiveShopId(branch?.id || '');
           setViewState('admin-dashboard');
         }}
@@ -206,6 +209,10 @@ export default function App() {
       <AdminDashboard
         currentUser={currentUser}
         selectedBranch={selectedBranch}
+        onSwitchBranch={() => {
+          setSelectedBranch(null);
+          setViewState('branch-select');
+        }}
         onLogout={handleFullLogout}
       />
     );

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, Shield, Store, UserPlus, LogIn, AlertCircle } from 'lucide-react';
-import { supabase } from '../../services/supabaseClient';
+import { supabase, setActiveShopId } from '../../services/supabaseClient';
 import EmployeeRegister from './EmployeeRegister';
 
 export default function EmployeeLogin({ onLoginSuccess, onSwitchToAdmin }) {
@@ -9,31 +9,46 @@ export default function EmployeeLogin({ onLoginSuccess, onSwitchToAdmin }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [showRegister, setShowRegister] = useState(false);
 
+  useEffect(() => {
+    setActiveShopId(''); // เคลียร์รหัสร้านเก่าที่ค้างในเครื่องก่อนล็อกอินเสมอ
+  }, []);
+
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (pin.length < 4) return;
+    const cleanPin = pin.trim();
+    if (cleanPin.length < 4) return;
     setLoading(true);
     setErrorMsg('');
+    setActiveShopId(''); // ล้างค่าก่อนค้นหาผู้ใช้ ป้องกันการติดเงื่อนไขร้านเดิม
 
-    // ค้นหาพนักงานจาก PIN 4 หลัก
-    const { data, error } = await supabase
-      .from('users')
-      .select('*, shops(*)')
-      .eq('pin_code', pin)
-      .eq('role', 'employee')
-      .single();
+    try {
+      // ค้นหาพนักงานจาก PIN 4 หลัก
+      const { data, error } = await supabase
+        .from('users')
+        .select('*, shops(*)')
+        .eq('pin_code', cleanPin)
+        .eq('role', 'employee')
+        .maybeSingle();
 
-    if (error || !data) {
-      setErrorMsg('ไม่พบข้อมูลพนักงาน หรือ PIN ไม่ถูกต้อง');
-    } else if (data.status === 'pending') {
-      // บัญชียังไม่ได้รับอนุมัติจากแอดมิน
-      setErrorMsg('บัญชีของคุณอยู่ระหว่างรอแอดมินอนุมัติเข้าใช้งาน');
-    } else if (data.status === 'rejected') {
-      setErrorMsg('คำขอลงทะเบียนของคุณไม่ได้รับการอนุมัติ');
-    } else {
-      onLoginSuccess(data);
+      if (error || !data) {
+        setErrorMsg('ไม่พบข้อมูลพนักงาน หรือ PIN ไม่ถูกต้อง');
+      } else if (data.status === 'pending') {
+        // บัญชียังไม่ได้รับอนุมัติจากแอดมิน
+        setErrorMsg('บัญชีของคุณอยู่ระหว่างรอแอดมินอนุมัติเข้าใช้งาน');
+      } else if (data.status === 'rejected') {
+        setErrorMsg('คำขอลงทะเบียนของคุณไม่ได้รับการอนุมัติ');
+      } else {
+        // บันทึกรหัสร้านของพนักงานคนนี้ทันทีที่ล็อกอินผ่าน
+        if (data.shop_id) {
+          setActiveShopId(data.shop_id);
+        }
+        onLoginSuccess(data);
+      }
+    } catch (err) {
+      setErrorMsg('เกิดข้อผิดพลาดในการเชื่อมต่อระบบ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   if (showRegister) {
@@ -51,7 +66,7 @@ export default function EmployeeLogin({ onLoginSuccess, onSwitchToAdmin }) {
       {/* Header สีเขียวทรงโค้ง ขยายเต็มความกว้าง */}
       <div className="bg-[#15803d] pt-8 pb-12 px-6 text-center text-white relative rounded-b-[40px] sm:rounded-b-[56px] shadow-md w-full">
         
-        {/* ย้ายปุ่มออกมาไว้นอก max-w-md เพื่อให้อ้างอิงขอบขวาของหน้าจอหลัก */}
+        {/* ปุ่มสลับไปหน้าเจ้าของร้าน */}
         <button
           type="button"
           onClick={onSwitchToAdmin}

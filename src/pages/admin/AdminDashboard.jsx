@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../services/supabaseClient';
+import { supabase, setActiveShopId } from '../../services/supabaseClient';
 import AdminAdvances from './AdminAdvances';
 import AdminEmployees from './AdminEmployees';
 import AdminPayroll from './AdminPayroll';
@@ -9,10 +9,10 @@ import AdminAttendanceDetails from './AdminAttendanceDetails';
 import { 
   Store, LogOut, CheckCircle2, Clock, 
   Banknote, Calendar, ChevronRight, 
-  Home, Users, Calculator, Settings, Bell 
+  Home, Users, Calculator, Settings, Bell, ArrowLeftRight 
 } from 'lucide-react';
 
-export default function AdminDashboard({ currentUser, selectedBranch, onLogout }) {
+export default function AdminDashboard({ currentUser, selectedBranch, onSwitchBranch, onLogout }) {
   const [activeTab, setActiveTab] = useState('home'); // 'home', 'employees', 'payroll', 'settings'
   const [subView, setSubView] = useState(null); // null, 'advances', 'leaves', 'attendance'
   const [attendanceInitialFilter, setAttendanceInitialFilter] = useState('all');
@@ -38,6 +38,10 @@ export default function AdminDashboard({ currentUser, selectedBranch, onLogout }
 
   useEffect(() => {
     setBranchInfo(selectedBranch);
+    const activeId = selectedBranch?.id || currentUser?.shop_id;
+    if (activeId) {
+      setActiveShopId(activeId);
+    }
     fetchDashboardStats();
 
     // ติดตามข้อมูล Real-time เมื่อมีคำขอใหม่จากพนักงาน
@@ -62,7 +66,7 @@ export default function AdminDashboard({ currentUser, selectedBranch, onLogout }
 
   const fetchDashboardStats = async () => {
     try {
-      const shopId = selectedBranch?.id;
+      const shopId = branchInfo?.id || selectedBranch?.id || currentUser?.shop_id;
 
       // 1. จำนวนพนักงานทั้งหมด
       let empQuery = supabase.from('users').select('id', { count: 'exact' }).eq('role', 'employee');
@@ -236,7 +240,19 @@ export default function AdminDashboard({ currentUser, selectedBranch, onLogout }
                 </div>
                 <div className="min-w-0">
                   <h1 className="font-extrabold text-base sm:text-lg leading-tight truncate">{shopName}</h1>
-                  <p className="text-[11px] sm:text-xs text-emerald-100 font-light">ยินดีต้อนรับ</p>
+                  <div className="flex items-center space-x-2 mt-0.5">
+                    <p className="text-[11px] sm:text-xs text-emerald-100 font-light truncate">ยินดีต้อนรับ</p>
+                    {onSwitchBranch && (
+                      <button
+                        type="button"
+                        onClick={onSwitchBranch}
+                        className="text-[10px] sm:text-[11px] bg-white/20 hover:bg-white/30 text-white px-2 py-0.5 rounded-lg font-semibold inline-flex items-center space-x-1 transition cursor-pointer shrink-0"
+                      >
+                        <ArrowLeftRight size={10} />
+                        <span>สลับสาขา</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 

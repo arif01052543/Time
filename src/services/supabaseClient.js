@@ -5,15 +5,33 @@ const supabaseAnonKey = 'sb_publishable_dQGbIPxI3zwDbIYkE4_C6A_Lvg1h7pB';
 
 // ฟังก์ชันตั้งค่า/ล้างรหัสร้านปัจจุบันสำหรับส่งยืนยันตัวตนกับ RLS
 export const setActiveShopId = (shopId) => {
-  if (shopId) {
-    sessionStorage.setItem('active_shop_id', String(shopId).trim());
+  const cleanId = shopId ? String(shopId).trim() : '';
+  if (cleanId) {
+    sessionStorage.setItem('active_shop_id', cleanId);
+    localStorage.setItem('active_shop_id', cleanId);
   } else {
     sessionStorage.removeItem('active_shop_id');
+    localStorage.removeItem('active_shop_id');
   }
 };
 
 export const getActiveShopId = () => {
-  return sessionStorage.getItem('active_shop_id') || '';
+  // 1. ดึงจาก sessionStorage หรือ localStorage
+  const storedId =
+    sessionStorage.getItem('active_shop_id') ||
+    localStorage.getItem('active_shop_id');
+  if (storedId) return storedId;
+
+  // 2. สำรอง: ดึงจาก URL (?shop=...) ทันทีกรณีเปิดลิงก์สมัครพนักงานครั้งแรก
+  if (typeof window !== 'undefined') {
+    const urlShopId = new URLSearchParams(window.location.search).get('shop');
+    if (urlShopId) {
+      setActiveShopId(urlShopId);
+      return urlShopId.trim();
+    }
+  }
+
+  return '';
 };
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {

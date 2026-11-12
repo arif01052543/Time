@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../services/supabaseClient';
+import { supabase, setActiveShopId } from '../../services/supabaseClient';
 import { 
   ArrowLeft, Store, Clock, MapPin, Search, 
   Locate, Save, CheckCircle2, RotateCcw,
@@ -24,7 +24,6 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
 
   // State บัญชีผู้ดูแลระบบ (ชื่อผู้ใช้งาน & รหัสผ่าน)
   const [adminUsername, setAdminUsername] = useState('');
-  const [currentPin, setCurrentPin] = useState('');
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [accountError, setAccountError] = useState('');
@@ -32,9 +31,12 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
   const [savingAccount, setSavingAccount] = useState(false);
 
   useEffect(() => {
+    if (selectedBranch?.id) {
+      setActiveShopId(selectedBranch.id);
+    }
     fetchShopSettings();
     if (currentUser) {
-      setAdminUsername(currentUser.id_card_last4 || '');
+      setAdminUsername(currentUser.name || currentUser.id_card_last4 || '');
     }
   }, [selectedBranch, currentUser]);
 
@@ -78,7 +80,7 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
         setLatitude(Number(pos.coords.latitude.toFixed(7)));
         setLongitude(Number(pos.coords.longitude.toFixed(7)));
       },
-      (err) => {
+      () => {
         alert('ไม่สามารถดึงพิกัด GPS ได้ โปรดเปิดสิทธิ์ Location บนอุปกรณ์ของคุณ');
       },
       { enableHighAccuracy: true }
@@ -126,8 +128,9 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
         radius_meters: parseFloat(radiusMeters) || 100,
       };
 
-      let shopId = selectedBranch?.id;
+      const shopId = selectedBranch?.id;
       if (shopId) {
+        setActiveShopId(shopId);
         const { error } = await supabase
           .from('shops')
           .update(payload)
@@ -142,7 +145,7 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
       setSuccessToast(true);
       setTimeout(() => setSuccessToast(false), 3000);
     } catch (err) {
-      alert('เกิดข้อผิดพลาดในการบันทึกการตั้งค่า');
+      alert('เกิดข้อผิดพลาดในการบันทึกการตั้งค่า: ' + err.message);
       console.error(err);
     } finally {
       setSaving(false);
@@ -161,29 +164,34 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
       return;
     }
 
-    if (!adminUsername.trim()) {
+    const cleanUsername = adminUsername.trim();
+    const cleanNewPin = newPin.trim();
+
+    if (!cleanUsername) {
       setAccountError('กรุณากรอกชื่อผู้ใช้งาน');
       return;
     }
 
-    if (newPin && newPin.length < 4) {
+    if (cleanNewPin && cleanNewPin.length < 4) {
       setAccountError('รหัสผ่านใหม่ต้องมีอย่างน้อย 4 ตัวอักษร/ตัวเลข');
       return;
     }
 
-    if (newPin && newPin !== confirmPin) {
+    if (cleanNewPin && cleanNewPin !== confirmPin.trim()) {
       setAccountError('รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน');
       return;
     }
 
     setSavingAccount(true);
+    setActiveShopId(''); // เคลียร์รหัสร้านชั่วคราวเพื่อให้แก้บัญชีแอดมินได้แม้กำลังดูสาขา 2 อยู่
     try {
       const updatePayload = {
-        id_card_last4: adminUsername,
+        name: cleanUsername,
+        id_card_last4: cleanUsername,
       };
 
-      if (newPin) {
-        updatePayload.pin_code = newPin;
+      if (cleanNewPin) {
+        updatePayload.pin_code = cleanNewPin;
       }
 
       const { error } = await supabase
@@ -200,6 +208,9 @@ export default function AdminSettings({ currentUser, selectedBranch, onBack, onT
     } catch (err) {
       setAccountError('เกิดข้อผิดพลาดในการอัปเดตบัญชี: ' + err.message);
     } finally {
+      if (selectedBranch?.id) {
+        setActiveShopId(selectedBranch.id);
+      }
       setSavingAccount(false);
     }
   };
