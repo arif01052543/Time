@@ -26,17 +26,60 @@ export default function EmployeePayroll({ currentUser, selectedBranch, onBack, o
     { label: 'ธันวาคม 2026', value: '2026-12', monthIndex: 11 },
   ];
 
+  // ตัวเลือกงวดทั้งหมด (เหมือนฝั่งแอดมิน)
+  const periodOptions = [
+    { value: 'full', label: 'เต็มเดือน (1 - สิ้นเดือน)' },
+    { value: 'half1', label: 'งวดแรก (วันที่ 1 - 15)' },
+    { value: 'half2', label: 'งวดหลัง (16 - สิ้นเดือน)' },
+    { value: 'week1', label: 'ราย 7 วัน: งวดที่ 1 (1 - 7)' },
+    { value: 'week2', label: 'ราย 7 วัน: งวดที่ 2 (8 - 14)' },
+    { value: 'week3', label: 'ราย 7 วัน: งวดที่ 3 (15 - 21)' },
+    { value: 'week4', label: 'ราย 7 วัน: งวดที่ 4 (22 - สิ้นเดือน)' },
+    { value: 'custom', label: 'กำหนดช่วงวันที่เอง' },
+  ];
+
+  const periodLabelMap = {
+    full: 'เต็มเดือน (1 - สิ้นเดือน)',
+    half1: 'งวดแรก (วันที่ 1 - 15)',
+    half2: 'งวดหลัง (16 - สิ้นเดือน)',
+    week1: 'ราย 7 วัน: งวดที่ 1 (1 - 7)',
+    week2: 'ราย 7 วัน: งวดที่ 2 (8 - 14)',
+    week3: 'ราย 7 วัน: งวดที่ 3 (15 - 21)',
+    week4: 'ราย 7 วัน: งวดที่ 4 (22 - สิ้นเดือน)',
+    custom: 'กำหนดช่วงวันที่เอง',
+  };
+
   // State การเลือกเดือนและงวดการจ่ายเงิน
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const currentIdx = new Date().getMonth();
     return monthOptions[currentIdx]?.label || 'พฤศจิกายน 2026';
   });
   const [selectedPeriod, setSelectedPeriod] = useState('full');
+
+  // State สำหรับช่วงวันที่กำหนดเอง
+  const [customStartDate, setCustomStartDate] = useState(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}-01`;
+  });
+  const [customEndDate, setCustomEndDate] = useState(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  });
   
   const [showMonthDropdown, setShowMonthDropdown] = useState(false);
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
 
-  const isPartTime = currentUser?.employment_type === 'part_time';
+  const rawEmpType = String(currentUser?.employment_type || '').toLowerCase().trim();
+  const isPartTime =
+    rawEmpType === 'part_time' ||
+    rawEmpType === 'part-time' ||
+    rawEmpType === 'parttime' ||
+    rawEmpType === 'hourly';
 
   // ดึงข้อมูลชื่อร้านจริงล่าสุดจากฐานข้อมูล
   useEffect(() => {
@@ -63,12 +106,6 @@ export default function EmployeePayroll({ currentUser, selectedBranch, onBack, o
 
     fetchShopDetails();
   }, [currentUser, selectedBranch]);
-
-  const periodLabelMap = {
-    full: 'เต็มเดือน (1 - สิ้นเดือน)',
-    half1: 'งวดแรก (วันที่ 1 - 15)',
-    half2: 'งวดหลัง (16 - สิ้นเดือน)',
-  };
 
   // ตัวเลขสรุปการทำงานและเงินเดือน
   const [daysWorked, setDaysWorked] = useState(0);
@@ -103,7 +140,27 @@ export default function EmployeePayroll({ currentUser, selectedBranch, onBack, o
       end = new Date(year, month, 15, 23, 59, 59);
     } else if (selectedPeriod === 'half2') {
       start = new Date(year, month, 16, 0, 0, 0);
+    } else if (selectedPeriod === 'week1') {
+      start = new Date(year, month, 1, 0, 0, 0);
+      end = new Date(year, month, 7, 23, 59, 59);
+    } else if (selectedPeriod === 'week2') {
+      start = new Date(year, month, 8, 0, 0, 0);
+      end = new Date(year, month, 14, 23, 59, 59);
+    } else if (selectedPeriod === 'week3') {
+      start = new Date(year, month, 15, 0, 0, 0);
+      end = new Date(year, month, 21, 23, 59, 59);
+    } else if (selectedPeriod === 'week4') {
+      start = new Date(year, month, 22, 0, 0, 0);
+      end = new Date(year, month + 1, 0, 23, 59, 59);
+    } else if (selectedPeriod === 'custom' && customStartDate && customEndDate) {
+      const [sy, sm, sd] = customStartDate.split('-').map(Number);
+      const [ey, em, ed] = customEndDate.split('-').map(Number);
+      if (sy && sm && sd && ey && em && ed) {
+        start = new Date(sy, sm - 1, sd, 0, 0, 0);
+        end = new Date(ey, em - 1, ed, 23, 59, 59);
+      }
     }
+
     return { start, end, selectedObj };
   };
 
@@ -137,7 +194,7 @@ export default function EmployeePayroll({ currentUser, selectedBranch, onBack, o
         supabase.removeChannel(channel);
       };
     }
-  }, [currentUser, shopInfo, selectedMonth, selectedPeriod]);
+  }, [currentUser, shopInfo, selectedMonth, selectedPeriod, customStartDate, customEndDate]);
 
   const calculateLateMinutes = (entryTimeStr, shiftStartStr) => {
     if (!entryTimeStr || !shiftStartStr) return 0;
@@ -268,13 +325,24 @@ export default function EmployeePayroll({ currentUser, selectedBranch, onBack, o
       setTotalNetSalary(net);
 
       // 5. ดึงสลิปการโอนเงินที่บันทึกแล้วตามเดือนและงวดที่เลือก
-      const { data: slips } = await supabase
+      let slipQuery = supabase
         .from('payrolls')
         .select('*')
         .eq('user_id', currentUser.id)
-        .in('month', [selectedObj.value, selectedObj.label])
-        .eq('period', selectedPeriod)
         .order('created_at', { ascending: false });
+
+      if (selectedPeriod === 'custom') {
+        slipQuery = slipQuery
+          .like('period', 'custom%')
+          .gte('created_at', start.toISOString())
+          .lte('created_at', end.toISOString());
+      } else {
+        slipQuery = slipQuery
+          .in('month', [selectedObj.value, selectedObj.label])
+          .eq('period', selectedPeriod);
+      }
+
+      const { data: slips } = await slipQuery;
 
       const slipList = slips || [];
       setPaidSlips(slipList);
@@ -296,6 +364,19 @@ export default function EmployeePayroll({ currentUser, selectedBranch, onBack, o
   const handleOpenSlip = (slip) => {
     setSelectedSlip(slip);
     setShowSlipModal(true);
+  };
+
+  const formatShortDate = (dateStr) => {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-');
+    return `${d}/${m}/${y}`;
+  };
+
+  const getSlipPeriodText = (periodCode) => {
+    if (!periodCode) return '';
+    if (periodLabelMap[periodCode]) return periodLabelMap[periodCode];
+    if (String(periodCode).startsWith('custom')) return 'กำหนดช่วงวันที่เอง';
+    return periodCode;
   };
 
   const rateVal = Number(currentUser?.salary_rate) || 0;
@@ -341,7 +422,7 @@ export default function EmployeePayroll({ currentUser, selectedBranch, onBack, o
                 </button>
 
                 {showMonthDropdown && (
-                  <div className="absolute top-11 left-0 right-0 bg-[#1b4332] text-white rounded-2xl shadow-2xl overflow-hidden z-30 border border-emerald-500/40 py-1 text-xs sm:text-sm font-medium max-h-48 overflow-y-auto">
+                  <div className="absolute top-11 left-0 right-0 bg-[#1b4332] text-white rounded-2xl shadow-2xl overflow-hidden z-30 border border-emerald-500/40 py-1 text-xs sm:text-sm font-medium max-h-56 overflow-y-auto">
                     {monthOptions.map((m) => (
                       <button
                         key={m.label}
@@ -360,7 +441,7 @@ export default function EmployeePayroll({ currentUser, selectedBranch, onBack, o
                 )}
               </div>
 
-              {/* Dropdown เลือกรอบงวด */}
+              {/* Dropdown เลือกรอบงวด (รวมราย 7 วัน และกำหนดเอง) */}
               <div className="relative">
                 <button
                   onClick={() => {
@@ -374,45 +455,52 @@ export default function EmployeePayroll({ currentUser, selectedBranch, onBack, o
                 </button>
 
                 {showPeriodDropdown && (
-                  <div className="absolute top-11 right-0 left-0 bg-[#1b4332] text-white rounded-2xl shadow-2xl overflow-hidden z-30 border border-emerald-500/40 py-1 text-xs sm:text-sm font-medium">
-                    <button
-                      onClick={() => {
-                        setSelectedPeriod('full');
-                        setShowPeriodDropdown(false);
-                      }}
-                      className={`w-full text-left px-3.5 py-2.5 transition cursor-pointer ${
-                        selectedPeriod === 'full' ? 'bg-[#2d6a4f] font-bold text-white' : 'text-emerald-100 hover:bg-[#2d6a4f]/50'
-                      }`}
-                    >
-                      เต็มเดือน (1 - สิ้นเดือน)
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedPeriod('half1');
-                        setShowPeriodDropdown(false);
-                      }}
-                      className={`w-full text-left px-3.5 py-2.5 transition cursor-pointer ${
-                        selectedPeriod === 'half1' ? 'bg-[#2d6a4f] font-bold text-white' : 'text-emerald-100 hover:bg-[#2d6a4f]/50'
-                      }`}
-                    >
-                      งวดแรก (วันที่ 1 - 15)
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedPeriod('half2');
-                        setShowPeriodDropdown(false);
-                      }}
-                      className={`w-full text-left px-3.5 py-2.5 transition cursor-pointer ${
-                        selectedPeriod === 'half2' ? 'bg-[#2d6a4f] font-bold text-white' : 'text-emerald-100 hover:bg-[#2d6a4f]/50'
-                      }`}
-                    >
-                      งวดหลัง (16 - สิ้นเดือน)
-                    </button>
+                  <div className="absolute top-11 right-0 min-w-[225px] bg-[#1b4332] text-white rounded-2xl shadow-2xl overflow-hidden z-30 border border-emerald-500/40 py-1 text-xs sm:text-sm font-medium max-h-64 overflow-y-auto">
+                    {periodOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => {
+                          setSelectedPeriod(opt.value);
+                          setShowPeriodDropdown(false);
+                        }}
+                        className={`w-full text-left px-3.5 py-2.5 transition cursor-pointer ${
+                          selectedPeriod === opt.value
+                            ? 'bg-[#2d6a4f] font-bold text-white'
+                            : 'text-emerald-100 hover:bg-[#2d6a4f]/50'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
 
             </div>
+
+            {/* ช่องเลือกวันที่เริ่มต้น-สิ้นสุด เมื่อเลือก "กำหนดช่วงวันที่เอง" */}
+            {selectedPeriod === 'custom' && (
+              <div className="grid grid-cols-2 gap-2 bg-[#0e5c2b]/80 backdrop-blur-md p-2.5 rounded-2xl text-xs">
+                <div>
+                  <label className="text-[10px] text-emerald-200 block mb-0.5 px-1">ตั้งแต่วันที่</label>
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="w-full bg-[#0b4822] text-white px-2.5 py-1.5 rounded-xl border border-emerald-500/50 text-xs focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-emerald-200 block mb-0.5 px-1">ถึงวันที่</label>
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="w-full bg-[#0b4822] text-white px-2.5 py-1.5 rounded-xl border border-emerald-500/50 text-xs focus:outline-none"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -427,7 +515,9 @@ export default function EmployeePayroll({ currentUser, selectedBranch, onBack, o
               <div className="bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-emerald-100 relative overflow-hidden space-y-3.5">
                 <div className="text-center pt-1">
                   <p className="text-xs sm:text-sm text-gray-500 font-medium">
-                    ประมาณการเงินเดือนรับสุทธิรอบ {periodLabelMap[selectedPeriod]}
+                    {selectedPeriod === 'custom'
+                      ? `ประมาณการเงินเดือนรับสุทธิ (${formatShortDate(customStartDate)} - ${formatShortDate(customEndDate)})`
+                      : `ประมาณการเงินเดือนรับสุทธิรอบ ${periodLabelMap[selectedPeriod]}`}
                   </p>
                   <h2 className="text-3xl sm:text-4xl font-black text-[#15803d] font-mono mt-1 mb-1">
                     ฿{totalNetSalary.toFixed(2)}
@@ -621,7 +711,7 @@ export default function EmployeePayroll({ currentUser, selectedBranch, onBack, o
               <div>
                 <h3 className="font-bold text-gray-800 text-base sm:text-lg">สลิปการโอนเงิน</h3>
                 <p className="text-xs sm:text-sm text-emerald-700 font-semibold mt-0.5">
-                  งวด: {selectedSlip.month} ({periodLabelMap[selectedSlip.period] || selectedSlip.period})
+                  งวด: {selectedSlip.month} ({getSlipPeriodText(selectedSlip.period)})
                 </p>
               </div>
               <button
