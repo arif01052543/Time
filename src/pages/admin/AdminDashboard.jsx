@@ -9,7 +9,7 @@ import AdminAttendanceDetails from './AdminAttendanceDetails';
 import { 
   Store, LogOut, CheckCircle2, Clock, 
   Banknote, Calendar, ChevronRight, 
-  Home, Users, Calculator, Settings 
+  Home, Users, Calculator, Settings, Bell 
 } from 'lucide-react';
 
 export default function AdminDashboard({ currentUser, selectedBranch, onLogout }) {
@@ -17,6 +17,7 @@ export default function AdminDashboard({ currentUser, selectedBranch, onLogout }
   const [subView, setSubView] = useState(null); // null, 'advances', 'leaves', 'attendance'
   const [attendanceInitialFilter, setAttendanceInitialFilter] = useState('all');
   const [branchInfo, setBranchInfo] = useState(selectedBranch);
+  const [notifEnabled, setNotifEnabled] = useState(false);
   const [stats, setStats] = useState({
     totalEmployees: 0,
     presentToday: 0,
@@ -24,6 +25,16 @@ export default function AdminDashboard({ currentUser, selectedBranch, onLogout }
     pendingAdvances: 0,
     pendingLeaves: 0,
   });
+
+  // ตรวจสอบสถานะการเปิดแจ้งเตือนบนเครื่องนี้
+  useEffect(() => {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(function (OneSignal) {
+      if (OneSignal.Notifications?.permission) {
+        setNotifEnabled(true);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     setBranchInfo(selectedBranch);
@@ -98,6 +109,29 @@ export default function AdminDashboard({ currentUser, selectedBranch, onLogout }
     } catch (err) {
       console.error('Error fetching stats:', err);
     }
+  };
+
+  // ฟังก์ชันกดขออนุญาตแจ้งเตือนและผูกเครื่องแอดมินกับ OneSignal
+  const handleEnableNotifications = () => {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async function (OneSignal) {
+      try {
+        await OneSignal.Notifications.requestPermission();
+        if (OneSignal.Notifications.permission) {
+          await OneSignal.User.addTags({
+            role: 'admin',
+            shop_id: String(branchInfo?.id || selectedBranch?.id || 'all'),
+          });
+          setNotifEnabled(true);
+          alert('เปิดรับการแจ้งเตือนบนเครื่องนี้เรียบร้อยแล้ว!');
+        } else {
+          alert('กรุณากด "อนุญาต (Allow)" ในการตั้งค่าเพื่อรับการแจ้งเตือน');
+        }
+      } catch (err) {
+        console.error('OneSignal Error:', err);
+        alert('ไม่สามารถเปิดแจ้งเตือนได้: ' + (err?.message || 'กรุณาเปิดผ่านไอคอนแอปบนหน้าจอโฮม'));
+      }
+    });
   };
 
   const shopName = branchInfo?.shop_name || selectedBranch?.shop_name || 'ร้านตัวอย่าง สาขา1';
@@ -194,23 +228,39 @@ export default function AdminDashboard({ currentUser, selectedBranch, onLogout }
         {/* Header สีเขียวทรงโค้ง ขยายเต็มหน้าจอ */}
         <div className="bg-[#15803d] p-5 sm:p-6 text-white rounded-b-[32px] sm:rounded-b-[40px] shadow-md sticky top-0 z-20 w-full">
           <div className="max-w-3xl mx-auto">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center space-x-3">
+            <div className="flex justify-between items-center gap-2 mb-4">
+              <div className="flex items-center space-x-3 min-w-0">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm shrink-0">
                   <Store size={22} className="text-white sm:w-6 sm:h-6" />
                 </div>
-                <div>
-                  <h1 className="font-extrabold text-base sm:text-lg leading-tight">{shopName}</h1>
+                <div className="min-w-0">
+                  <h1 className="font-extrabold text-base sm:text-lg leading-tight truncate">{shopName}</h1>
                   <p className="text-[11px] sm:text-xs text-emerald-100 font-light">ยินดีต้อนรับ</p>
                 </div>
               </div>
 
-              <button
-                onClick={onLogout}
-                className="w-10 h-10 sm:w-11 sm:h-11 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition backdrop-blur-sm cursor-pointer"
-              >
-                <LogOut size={18} />
-              </button>
+              <div className="flex items-center space-x-2 shrink-0">
+                <button
+                  onClick={handleEnableNotifications}
+                  title="เปิดแจ้งเตือนมือถือ"
+                  className={`h-10 sm:h-11 px-3 rounded-2xl flex items-center space-x-1.5 text-xs font-bold transition backdrop-blur-sm cursor-pointer ${
+                    notifEnabled
+                      ? 'bg-emerald-400/25 text-white border border-emerald-200/40'
+                      : 'bg-white/15 hover:bg-white/25 text-white'
+                  }`}
+                >
+                  <Bell size={16} className={notifEnabled ? 'text-yellow-300 fill-yellow-300' : 'text-white'} />
+                  <span>{notifEnabled ? 'แจ้งเตือนเปิดอยู่' : 'เปิดแจ้งเตือน'}</span>
+                </button>
+
+                <button
+                  onClick={onLogout}
+                  title="ออกจากระบบ"
+                  className="w-10 h-10 sm:w-11 sm:h-11 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition backdrop-blur-sm cursor-pointer shrink-0"
+                >
+                  <LogOut size={18} />
+                </button>
+              </div>
             </div>
 
             <div className="bg-[#0e5c2b]/80 backdrop-blur-md rounded-2xl p-3 flex justify-between items-center text-xs sm:text-sm">
