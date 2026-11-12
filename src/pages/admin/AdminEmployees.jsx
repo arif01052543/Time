@@ -254,7 +254,7 @@ export default function AdminEmployees({ selectedBranch, onBack, onTabChange }) 
             <div className="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-sm">
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm font-bold text-emerald-900">
-                  ลิงก์ลงทะเบียนพนักงานใหม่ (เฉพาะสาขานี้)
+                  ลิงก์ลงทะเบียนพนักงานใหม่
                 </p>
                 <p className="text-[11px] text-emerald-700 truncate font-mono mt-0.5">
                   รหัสร้าน: {selectedBranch.id}
