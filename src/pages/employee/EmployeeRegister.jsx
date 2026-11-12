@@ -36,9 +36,18 @@ export default function EmployeeRegister({ initialShopId, onBack, onRegisterSucc
     }
   }, [initialShopId]);
 
-  // ดึงข้อมูลเฉพาะร้านเดียวตาม ID (ไม่ดึงร้านอื่นในระบบ)
+  // ดึงข้อมูลเฉพาะร้านเดียวตาม ID (รองรับทั้งรหัสเพียวๆ และลิงก์เต็ม)
   const fetchSingleShop = async (shopIdToFind, isFromLink = false) => {
-    const cleanId = String(shopIdToFind || '').trim();
+    let cleanId = String(shopIdToFind || '').trim();
+    
+    // ถ้าพนักงานเอาลิงก์เต็มมาวางในช่อง ให้ดึงเฉพาะค่าหลัง ?shop=
+    if (cleanId.includes('shop=')) {
+      const match = cleanId.match(/[?&]shop=([^&]+)/);
+      if (match && match[1]) {
+        cleanId = match[1].trim();
+      }
+    }
+
     if (!cleanId) {
       setShopError('กรุณากรอกรหัสร้าน');
       return;
@@ -239,7 +248,7 @@ export default function EmployeeRegister({ initialShopId, onBack, onRegisterSucc
                           type="text"
                           value={shopCodeInput}
                           onChange={(e) => setShopCodeInput(e.target.value)}
-                          placeholder="กรอกรหัสร้านที่ได้รับจากแอดมิน"
+                          placeholder="กรอกรหัสร้าน หรือ วางลิงก์ที่ได้รับจากแอดมิน"
                           className="flex-1 min-w-0 p-2.5 sm:p-3 border rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:border-emerald-600 text-xs sm:text-sm font-mono"
                         />
                         <button
