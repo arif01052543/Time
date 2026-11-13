@@ -326,8 +326,7 @@ export default function SuperAdminDashboard({ onBack }) {
   };
 
   const handleCopyInvite = (shop) => {
-    const inviteUrl = `${window.location.origin}/?shop=${shop.shop_id}`;
-    const text = `ข้อมูลเข้าใช้งานระบบ TimeTrack\nร้าน: ${shop.shop_name}\nลิงก์เว็บ: ${window.location.origin}\nชื่อผู้ใช้งาน: ${shop.admin_name || '-'}\nรหัส PIN: ${shop.admin_pin || '-'}\n\nลิงก์ส่งให้พนักงานสมัคร:\n${inviteUrl}`;
+    const text = `ข้อมูลเข้าใช้งานระบบ TimeTrack\nร้าน: ${shop.shop_name}\nลิงก์เว็บ: ${window.location.origin}\nชื่อผู้ใช้งาน: ${shop.admin_name || '-'}\nรหัส PIN: ${shop.admin_pin || '-'}\nรหัสร้าน (สำหรับพนักงานลงทะเบียน): ${shop.shop_id}`;
     navigator.clipboard.writeText(text);
     setCopiedId(shop.shop_id);
     setTimeout(() => setCopiedId(''), 2000);
